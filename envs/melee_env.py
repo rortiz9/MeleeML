@@ -36,8 +36,6 @@ class MeleeEnv(gym.Env):
 
         if self_play:
             self.player2.connect()
-
-        self.reset()
     
     def step(self, action):
         raise NotImplementedError
@@ -82,6 +80,8 @@ class MeleeEnv(gym.Env):
                 self.player2.flush()
 
             self.gamestate.step()
+
+        return self.gamestate.tolist()
 
     def close(self):
         self.dolphin.terminate()
