@@ -14,7 +14,6 @@ from keras.utils import to_categorical
 class A2C:
     def __init__(self,
                  env,
-                 session,
                  lr=0.0001,
                  gamma=0.99,
                  epsilon=0.1,
@@ -23,7 +22,6 @@ class A2C:
                  network_width=128
                  model_path='weights/'):
         self.env = env
-        self.session = session
         self.lr = lr
         self.gamma = gamma
         self.rms_optimizer = RMSprop(lr=lr, epsilon=epsilon, rho=rho)
