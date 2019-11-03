@@ -103,12 +103,12 @@ class A2C:
     def train(self, episodes, summary_writer):
         for e in range(episodes):
             time, cumul_reward, done = 0, 0, False
-            old_state = env.reset()
+            old_state = self.env.reset()
             actions, states, rewards = [], [], []
 
             while not done:
                 action = self.act(old_state)
-                new_state, reward, done, _ = env.step(action)
+                new_state, reward, done, _ = self.env.step(action)
                 actions.append(to_categorical(action, self.env.action_space.shape[0]))
                 rewards.append(reward)
                 states.append(old_state)
