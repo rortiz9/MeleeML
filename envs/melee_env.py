@@ -5,19 +5,17 @@ import melee
 class MeleeEnv(gym.Env):
     def __init__(self,
                  log=False,
-                 self_play=True,
                  render=False,
+                 opponent=melee.enums.ControllerType.UNPLUGGED,
                  iso_path='../smash.iso'):
-        self.self_play = self_play
         self.logger = None
+        self.self_play = False
 
         if log:
             self.logger = melee.logger.Logger()
 
-        opponent = melee.enums.ControllerType.GCN_ADAPTER
-
-        if self_play:
-            opponent = melee.enums.ControllerType.STANDARD
+        if opponent == melee.enums.ControllerType.STANDARD:
+            self.self_play = True
 
         self.dolphin = melee.dolphin.Dolphin(
                 ai_port=1,
@@ -28,7 +26,7 @@ class MeleeEnv(gym.Env):
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
         self.p1_turn = True
 
-        if self_play:
+        if self.self_play:
             self.player2 = melee.controller.Controller(port=2, dolphin=self.dolphin)
 
         self.dolphin.run(render=render, iso_path=iso_path)
