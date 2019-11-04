@@ -1,5 +1,6 @@
 import gym
 import melee
+import numpy as np
 
 
 class MeleeEnv(gym.Env):
@@ -25,8 +26,6 @@ class MeleeEnv(gym.Env):
                 opponent_type=opponent,
                 logger=self.logger)
         self.gamestate = melee.gamestate.GameState(self.dolphin)
-        self.observation_space = gym.spaces.Discrete(len(self.gamestate.tolist()))
-        self.action_space = gym.spaces.Discrete(len(melee.enums.Button))
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
         self.p1_turn = True
 
