@@ -50,35 +50,34 @@ class MeleeEnv(gym.Env):
         if not self.p1_turn:
             controller = self.player2
 
-        controller.tilt_analog(
-                melee.enums.Button.BUTTON_MAIN, action[0], action[1])
-        controller.tilt_analog(
-                melee.enums.Button.BUTTON_C, action[2], action[3])
-
         if action[6]:
             controller.press_button(melee.enums.Button.BUTTON_A)
-        if action[7]:
+        elif action[7]:
             controller.press_button(melee.enums.Button.BUTTON_B)
-        if action[8]:
+        elif action[8]:
             controller.press_button(melee.enums.Button.BUTTON_X)
-        if action[9]:
+        elif action[9]:
             controller.press_button(melee.enums.Button.BUTTON_Y)
-        if action[10]:
+        elif action[10]:
             controller.press_button(melee.enums.Button.BUTTON_Z)
-        if action[11]:
-            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[4])
-        if action[12]:
-            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[5])
-        if action[13]:
-            controller.press_button(melee.enums.Button.BUTTON_START)
-        if action[14]:
+        elif action[11]:
             controller.press_button(melee.enums.Button.BUTTON_D_UP)
-        if action[15]:
+        elif action[12]:
             controller.press_button(melee.enums.Button.BUTTON_D_DOWN)
-        if action[16]:
+        elif action[13]:
             controller.press_button(melee.enums.Button.BUTTON_D_LEFT)
-        if action[17]:
+        elif action[14]:
             controller.press_button(melee.enums.Button.BUTTON_D_RIGHT)
+        elif action[15]:
+            controller.empty_input()
+
+        if not action[15]:
+            controller.tilt_analog(
+                    melee.enums.Button.BUTTON_MAIN, action[0], action[1])
+            controller.tilt_analog(
+                    melee.enums.Button.BUTTON_C, action[2], action[3])
+            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[4])
+            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[5])
 
         controller.flush()
         self.gamestate.step()

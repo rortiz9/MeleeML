@@ -40,8 +40,10 @@ def main():
 
         agent.save_model(name, e)
 
-        while (env.gamestate.ai_state.stock == 0 or
-               env.gamestate.opponent_state.stock == 0):
+        while (env.gamestate.menu_state in [
+            melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH] and (
+                env.gamestate.ai_state.stock == 0 or
+                env.gamestate.opponent_state.stock == 0)):
             env.gamestate.step()
 
     env.close()

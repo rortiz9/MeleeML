@@ -7,6 +7,7 @@ import time
 from keras.layers import Input, Dense, Lambda
 from keras.models import Model
 from keras.optimizers import Adam
+from keras.utils import to_categorical
 
 
 class A2C:
@@ -16,8 +17,8 @@ class A2C:
                  gamma=0.99,
                  state_size=34,
                  cont_acts=6,
-                 disc_acts=12,
-                 entropy_reg=0.01,
+                 disc_acts=11,
+                 entropy_reg=0.1,
                  network_width=128,
                  model_path='weights/'):
         self.env = env
@@ -45,7 +46,7 @@ class A2C:
         var_0 = Dense(self.cont_act_dim, activation='softplus')(actor)
         mu = Lambda(lambda x: x * 2)(mu_0)
         var = Lambda(lambda x: x + 0.0001)(var_0)
-        disc = Dense(self.disc_act_dim, activation='sigmoid')(actor)
+        disc = Dense(self.disc_act_dim, activation='softmax')(actor)
 
         critic = Dense(width, activation='relu')(layer3)
         val = Dense(1, activation='linear')(critic)
@@ -112,10 +113,13 @@ class A2C:
         epsilon = np.random.randn(self.cont_act_dim)
         cont_act = mu + np.sqrt(var) * epsilon
         cont_act = np.clip(cont_act, 0, 1.0)
-        disc_act = np.random.random(self.disc_act_dim) < disc
+        cont_act = np.reshape(cont_act, -1)
+        
+        disc_act = np.random.choice(
+                np.arange(self.disc_act_dim), 1, p=disc.ravel())[0]
+        disc_act = to_categorical(disc_act, num_classes=self.disc_act_dim)
 
-        action = np.concatenate([cont_act, disc_act], axis=1)
-        return np.reshape(action, -1)
+        return np.concatenate([cont_act, disc_act])
 
     def train(self, state, action, reward, next_state, done):
         state = np.reshape(state, (1, -1))
