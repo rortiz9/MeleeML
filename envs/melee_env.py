@@ -38,8 +38,8 @@ class MeleeEnv(gym.Env):
         if self_play:
             self.player2.connect()
 
-    def _strip_state(self):
-        state = np.array(self.gamestate.tolist())
+    def _strip_state(self, state):
+        state = np.array(state)
         state = state[~np.isnan(state)]
         return state
     
@@ -82,6 +82,7 @@ class MeleeEnv(gym.Env):
 
         controller.flush()
         self.gamestate.step()
+        state = self._strip_state(self.gamestate.tolist())
 
         done = False
         p1_score = (self.gamestate.ai_state.stock * 1000
@@ -99,6 +100,11 @@ class MeleeEnv(gym.Env):
         reward = p1_score - p2_score
 
         if not self.p1_turn:
+            state = []
+            state.append(self.gamestate.stage.value)
+            state = state + self.gamestate.opponent_state.tolist()
+            state = state + self.gamestate.ai_state.tolist()
+            state = self._strip_state(state)
             reward = p2_score - p1_score
 
         if self.self_play:
@@ -108,7 +114,7 @@ class MeleeEnv(gym.Env):
             self.logger.logframe(self.gamestate)
             self.logger.writeframe()
 
-        return self._strip_state(), reward, done
+        return state, reward, done
 
     def reset(self):
         self.gamestate.step()
@@ -149,7 +155,7 @@ class MeleeEnv(gym.Env):
 
             self.gamestate.step()
 
-        return self._strip_state()
+        return self._strip_state(self.gamestate.tolist())
 
     def close(self):
         self.dolphin.terminate()
