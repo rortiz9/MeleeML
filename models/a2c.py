@@ -38,7 +38,7 @@ class A2C:
 
     def _build_model(self, width):
         state = Input((1,) + self.state_shape)
-        layer2 = Dense(width / 2, activation='relu')(state)
+        layer2 = Dense(width // 2, activation='relu')(state)
         layer3 = Dense(width, activation='relu')(layer2)
 
         actor = Dense(width, activation='relu')(layer3)
@@ -59,7 +59,8 @@ class A2C:
         pdf = 1.0 / K.sqrt(2.0 * np.pi * var) * K.exp(-K.square(action - mu) / (2.0 * var))
         log_pdf = K.log(pdf + K.epsilon())
         entropy = K.sum(0.5 * (K.log(2.0 * np.pi * var) + 1.0))
-        exp = K.sum(log_pdf * advantages + reg * entropy)
+        exp = log_pdf * advantages
+        exp = K.sum(exp + reg * entropy)
 
         loss = -exp
         updates = self.optimizer.get_updates(self.model.trainable_weights, [], loss)
