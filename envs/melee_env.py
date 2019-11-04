@@ -25,6 +25,8 @@ class MeleeEnv(gym.Env):
                 opponent_type=opponent,
                 logger=self.logger)
         self.gamestate = melee.gamestate.GameState(self.dolphin)
+        self.observation_space = gym.spaces.Discrete(len(self.gamestate.tolist()))
+        self.action_space = gym.spaces.Discrete(len(melee.enums.Button))
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
         self.p1_turn = True
 
@@ -38,7 +40,53 @@ class MeleeEnv(gym.Env):
             self.player2.connect()
     
     def step(self, action):
-        raise NotImplementedError
+        self.gamestate.step()
+        controller = self.player1
+        
+        if not self.p1_turn:
+            controller = self.player2
+
+        controller.tilt_analog(
+                melee.enums.Button.BUTTON_MAIN, action[0], action[1])
+        controller.tilt_analog(
+                melee.enums.Button.BUTTON_C, action[2], action[3])
+
+        if action[6]:
+            controller.press_button(melee.enums.Button.BUTTON_A)
+        if action[7]:
+            controller.press_button(melee.enums.Button.BUTTON_B)
+        if action[8]:
+            controller.press_button(melee.enums.Button.BUTTON_X)
+        if action[9]:
+            controller.press_button(melee.enums.Button.BUTTON_Y)
+        if action[10]:
+            controller.press_button(melee.enums.Button.BUTTON_Z)
+        if action[11]:
+            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[4])
+        if action[12]:
+            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[5])
+        if action[13]:
+            controller.press_button(melee.enums.Button.BUTTON_START)
+        if action[14]:
+            controller.press_button(melee.enums.Button.BUTTON_D_UP)
+        if action[15]:
+            controller.press_button(melee.enums.Button.BUTTON_D_DOWN)
+        if action[16]:
+            controller.press_button(melee.enums.Button.BUTTON_D_LEFT)
+        if action[17]:
+            controller.press_button(melee.enums.Button.BUTTON_D_RIGHT)
+
+        controller.flush()
+
+        if self.logger:
+            self.logger.logframe(self.gamestate)
+            self.logger.writeframe()
+
+        if self.self_play:
+            self.p1_turn = not self.p1_turn
+
+        self.gamestate.step()
+        return self.gamestate.tolist()
 
     def reset(self):
         self.gamestate.step()
