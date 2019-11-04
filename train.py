@@ -12,7 +12,7 @@ def main():
     parser.add_argument('--iso_path', default='../smash.iso', help='Path to MELEE iso')
     parser.add_argument('--model_path', default='weights/', help='Path to store weights')
     parser.add_argument('--load_model', default=None, help='Load model from file')
-    parser.add_argument('--num_episdoes', default=10, help='# of games to play')
+    parser.add_argument('--num_episodes', default=10, help='# of games to play')
     args = parser.parse_args()
 
     env = MeleeEnv(log=args.log,
