@@ -1,4 +1,5 @@
 import argparse
+import time
 
 from models.a2c import A2C
 from envs.melee_env import MeleeEnv
@@ -6,6 +7,7 @@ from envs.melee_env import MeleeEnv
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument('--name', default=time.asctime(), help='Name of this run')
     parser.add_argument('--log', default=False)
     parser.add_argument('--render', default=False, help='Display Dolphin GUI')
     parser.add_argument('--self_play', default=False)
@@ -15,6 +17,7 @@ def main():
     parser.add_argument('--num_episodes', default=10, help='# of games to play')
     args = parser.parse_args()
 
+    name = args.name.replace(' ', '_')
     env = MeleeEnv(log=args.log,
                    render=args.render,
                    self_play=args.self_play,
@@ -34,7 +37,7 @@ def main():
             agent.train(state, action, reward, next_state, done)
             state = next_state
 
-        agent.save_model()
+        agent.save_model(name, e)
 
     env.close()
 

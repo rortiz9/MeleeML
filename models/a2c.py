@@ -135,17 +135,16 @@ class A2C:
         self.disc_opt([state, disc_act, advantage])
         self.val_opt([state, target])
 
-    def save_model(self):
+    def save_model(self, name, e):
         if not os.path.exists(self.model_path):
             os.makedirs(self.model_path)
 
-        timestamp = time.asctime().replace(' ', '_')
         self.cont_actor.save_weights(
-                os.path.join(self.model_path, timestamp + '_cont_actor.h5'))
+                os.path.join(self.model_path, name + '_' + str(e) + '_cont_actor.h5'))
         self.disc_actor.save_weights(
-                os.path.join(self.model_path, timestamp + '_disc_actor.h5'))
+                os.path.join(self.model_path, name + '_' + str(e) + '_disc_actor.h5'))
         self.critic.save_weights(
-                os.path.join(self.model_path, timestamp + '_critic.h5'))
+                os.path.join(self.model_path, name + '_' + str(e) + '_critic.h5'))
 
     def load_model(self, path):
         self.cont_actor.load_weights(path + '_cont_actor.h5')
