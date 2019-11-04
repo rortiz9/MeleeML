@@ -19,7 +19,7 @@ class A2C:
                  cont_acts=6,
                  disc_acts=12,
                  entropy_reg=0.01,
-                 network_width=128
+                 network_width=128,
                  model_path='weights/'):
         self.env = env
         self.lr = lr
@@ -37,9 +37,8 @@ class A2C:
         self.model_path = model_path
 
     def _build_model(self, width):
-        state = Input(shape=self.state_shape)
-        layer1 = Flatten()(state)
-        layer2 = Dense(width / 2, activation='relu')(layer1)
+        state = Input((1,) + self.state_shape)
+        layer2 = Dense(width / 2, activation='relu')(state)
         layer3 = Dense(width, activation='relu')(layer2)
 
         actor = Dense(width, activation='relu')(layer3)
@@ -98,7 +97,7 @@ class A2C:
 
         epsilon = np.random.randn(self.cont_act_dim)
         cont_act = mu + np.sqrt(var) * epsilon
-        cont_act = np.clip(cont_act, 0, 255)
+        cont_act = np.clip(cont_act, 0, 1.0)
 
         disc_act = np.random.random(self.disc_act_dim) < disc
         return np.concatenate([cont_act, disc_act])

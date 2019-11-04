@@ -117,9 +117,7 @@ class MeleeEnv(gym.Env):
                         gamestate=self.gamestate,
                         port=1,
                         opponent_port=2,
-                        controller=self.player1,
-                        swag=(not self.self_play),
-                        start=(not self.self_play))
+                        controller=self.player1)
 
                 if self.self_play:
                     melee.menuhelper.choosecharacter(
