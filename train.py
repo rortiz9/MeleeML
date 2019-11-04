@@ -1,4 +1,5 @@
 import argparse
+import melee
 import time
 
 from models.a2c import A2C
@@ -14,7 +15,7 @@ def main():
     parser.add_argument('--iso_path', default='../smash.iso', help='Path to MELEE iso')
     parser.add_argument('--model_path', default='weights/', help='Path to store weights')
     parser.add_argument('--load_model', default=None, help='Load model from file')
-    parser.add_argument('--num_episodes', default=10, help='# of games to play')
+    parser.add_argument('--num_episodes', type=int, default=10, help='# of games to play')
     args = parser.parse_args()
 
     name = args.name.replace(' ', '_')
@@ -38,6 +39,10 @@ def main():
             state = next_state
 
         agent.save_model(name, e)
+
+        while (env.gamestate.ai_state.stock == 0 or
+               env.gamestate.opponent_state.stock == 0):
+            env.gamestate.step()
 
     env.close()
 
