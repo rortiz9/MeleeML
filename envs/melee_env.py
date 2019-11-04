@@ -38,6 +38,11 @@ class MeleeEnv(gym.Env):
 
         if self_play:
             self.player2.connect()
+
+    def _strip_state(self):
+        state = np.array(self.gamestate.tolist())
+        state = state[~np.isnan(state)]
+        return state
     
     def step(self, action):
         self.gamestate.step()
@@ -104,7 +109,7 @@ class MeleeEnv(gym.Env):
             self.logger.logframe(self.gamestate)
             self.logger.writeframe()
 
-        return self.gamestate.tolist(), reward, done
+        return self._strip_state(), reward, done
 
     def reset(self):
         self.gamestate.step()
@@ -145,7 +150,7 @@ class MeleeEnv(gym.Env):
 
             self.gamestate.step()
 
-        return self.gamestate.tolist()
+        return self._strip_state()
 
     def close(self):
         self.dolphin.terminate()
