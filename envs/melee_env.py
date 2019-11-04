@@ -77,16 +77,34 @@ class MeleeEnv(gym.Env):
             controller.press_button(melee.enums.Button.BUTTON_D_RIGHT)
 
         controller.flush()
+        self.gamestate.step()
+
+        done = False
+        p1_score = (self.gamestate.ai_state.stock * 1000
+                  - self.gamestate.ai_state.percent)
+        p2_score = (self.gamestate.opponent_state.stock * 1000
+                  - self.gamestate.opponent_state.percent)
+
+        if self.gamestate.ai_state.stock == 0:
+            p1_score = -10000
+            done = True
+        if self.gamestate.opponent_state.stock == 0:
+            p2_score = -10000
+            done = True
+
+        reward = p1_score - p2_score
+
+        if not self.p1_turn:
+            reward = p2_score - p1_score
+
+        if self.self_play:
+            self.p1_turn = not self.p1_turn
 
         if self.logger:
             self.logger.logframe(self.gamestate)
             self.logger.writeframe()
 
-        if self.self_play:
-            self.p1_turn = not self.p1_turn
-
-        self.gamestate.step()
-        return self.gamestate.tolist()
+        return self.gamestate.tolist(), reward, done
 
     def reset(self):
         self.gamestate.step()
