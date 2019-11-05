@@ -45,8 +45,14 @@ class MeleeEnv(gym.Env):
     
     def step(self, action):
         self.gamestate.step()
+
+        p1_stock = self.gamestate.ai_state.stock
+        p1_percent = self.gamestate.ai_state.percent
+        p2_stock = self.gamestate.opponent_state.stock
+        p2_percent = self.gamestate.opponent_state.percent
+
         controller = self.player1
-        
+
         if not self.p1_turn:
             controller = self.player2
 
@@ -84,14 +90,15 @@ class MeleeEnv(gym.Env):
         state = self._strip_state(self.gamestate.tolist())
 
         done = False
-        p1_score = (self.gamestate.ai_state.stock * 1000
-                  - self.gamestate.ai_state.percent)
-        p2_score = (self.gamestate.opponent_state.stock * 1000
-                  - self.gamestate.opponent_state.percent)
+        p1_score = (1000 * (self.gamestate.ai_state.stock - p1_stock) -
+                   (self.gamestate.ai_state.percent - p1_percent))
+        p2_score = (1000 * (self.gamestate.opponent_state.stock - p2_stock) -
+                   (self.gamestate.opponent_state.percent - p2_percent))
 
         if self.gamestate.ai_state.stock == 0:
             p1_score = -10000
             done = True
+
         if self.gamestate.opponent_state.stock == 0:
             p2_score = -10000
             done = True
