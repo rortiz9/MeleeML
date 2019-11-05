@@ -9,13 +9,17 @@ from envs.melee_env import MeleeEnv
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', default=time.asctime(), help='Name of this run')
-    parser.add_argument('--log', default=False)
-    parser.add_argument('--render', default=False, help='Display Dolphin GUI')
-    parser.add_argument('--self_play', default=False)
-    parser.add_argument('--iso_path', default='../smash.iso', help='Path to MELEE iso')
-    parser.add_argument('--model_path', default='weights/', help='Path to store weights')
+    parser.add_argument('--log', default=False, action='store_true')
+    parser.add_argument(
+            '--render', default=False, action='store_true', help='Display Dolphin GUI')
+    parser.add_argument('--self_play', default=False, action='store_true')
+    parser.add_argument(
+            '--iso_path', default='../smash.iso', help='Path to MELEE iso')
+    parser.add_argument(
+            '--model_path', default='weights/', help='Path to store weights')
     parser.add_argument('--load_model', default=None, help='Load model from file')
-    parser.add_argument('--num_episodes', type=int, default=10, help='# of games to play')
+    parser.add_argument(
+            '--num_episodes', type=int, default=10, help='# of games to play')
     args = parser.parse_args()
 
     name = args.name.replace(' ', '_')
