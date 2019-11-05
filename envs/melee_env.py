@@ -28,6 +28,10 @@ class MeleeEnv(gym.Env):
         self.gamestate = melee.gamestate.GameState(self.dolphin)
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
         self.p1_turn = True
+        self.p1_stock = 4
+        self.p1_percent = 0.0
+        self.p2_stock = 4
+        self.p2_percent = 0.0
 
         if self.self_play:
             self.player2 = melee.controller.Controller(port=2, dolphin=self.dolphin)
@@ -46,12 +50,6 @@ class MeleeEnv(gym.Env):
     
     def step(self, action):
         self.gamestate.step()
-
-        p1_stock = self.gamestate.ai_state.stock
-        p1_percent = self.gamestate.ai_state.percent
-        p2_stock = self.gamestate.opponent_state.stock
-        p2_percent = self.gamestate.opponent_state.percent
-
         controller = self.player1
 
         if not self.p1_turn:
@@ -106,10 +104,18 @@ class MeleeEnv(gym.Env):
         state = self._strip_state(self.gamestate.tolist())
 
         done = False
-        p1_score = (1000 * (self.gamestate.ai_state.stock - p1_stock) -
-                   (self.gamestate.ai_state.percent - p1_percent))
-        p2_score = (1000 * (self.gamestate.opponent_state.stock - p2_stock) -
-                   (self.gamestate.opponent_state.percent - p2_percent))
+        p1_score = self.p1_percent - self.gamestate.ai_state.percent
+        p2_score = self.p2_percent - self.gamestate.opponent_state.percent
+
+        if self.p1_stock > self.gamestate.ai_state.stock:
+            p1_score = -1000 * (self.p1_stock - self.gamestate.ai_state.stock)
+            self.p1_stock = self.gamestate.ai_state.stock
+        if self.p2_stock > self.gamestate.opponent_state.stock:
+            p2_score = -1000 * (self.p2_stock - self.gamestate.opponent_state.stock)
+            self.p2_stock = self.gamestate.opponent_state.stock
+
+        self.p1_percent = self.gamestate.ai_state.percent
+        self.p2_percent = self.gamestate.opponent_state.percent
 
         if (self.gamestate.ai_state.stock == 0
                 or self.gamestate.opponent_state.stock == 0):
