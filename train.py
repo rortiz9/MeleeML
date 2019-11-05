@@ -40,7 +40,6 @@ def main():
 
     if args.warm_start:
         states, actions = get_data_from_logs(args.warm_start)
-        print(states.shape)
 
         for i in range(states.shape[0]):
             state = states[i]

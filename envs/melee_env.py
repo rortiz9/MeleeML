@@ -61,8 +61,8 @@ class MeleeEnv(gym.Env):
                 melee.enums.Button.BUTTON_MAIN, action[2], action[3])
         controller.tilt_analog(
                 melee.enums.Button.BUTTON_C, action[4], action[5])
-        controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
-        controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
+        controller.press_shoulder(melee.enums.Button.BUTTON_L, 0)
+        controller.press_shoulder(melee.enums.Button.BUTTON_R, 0)
 
         button = None
 
@@ -84,11 +84,16 @@ class MeleeEnv(gym.Env):
             button = melee.enums.Button.BUTTON_D_LEFT
         elif action[14]:
             button = melee.enums.Button.BUTTON_D_RIGHT
+        elif action[15]:
+            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
+            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
 
         for item in melee.enums.Button:
-            if item == melee.enums.Button.BUTTON_MAIN:
-                continue
-            if item == melee.enums.Button.BUTTON_C:
+            if item in [
+                    melee.enums.Button.BUTTON_MAIN,
+                    melee.enums.Button.BUTTON_C,
+                    melee.enums.Button.BUTTON_L,
+                    melee.enums.Button.BUTTON_R]:
                 continue
 
             if item == button:
