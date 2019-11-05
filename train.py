@@ -40,8 +40,9 @@ def main():
 
     if args.warm_start:
         states, actions = get_data_from_logs(args.warm_start)
+        print(states.shape)
 
-        for i in range(states.shape[1]):
+        for i in range(states.shape[0]):
             state = states[i]
             action = np.zeros(16)
             action[:6] = actions[i][10:] / 255
@@ -61,17 +62,13 @@ def main():
             p2_score = (1000 * (next_state[20] - state[20]) -
                        (next_state[19] - state[19]))
 
-            if next_state[5] == 0:
-                p1_score = -10000
-                done = True
-            if next_state[20] == 0:
-                p2_score = -10000
+            if next_state[5] == 0 or next_state[20] == 0:
                 done = True
 
             reward = p1_score - p2_score
             agent.train(state, action, reward, next_state, done)
 
-            if args.eval and i % 60 == 0:
+            if args.eval and i % 36000 == 0:
                 eval_score = 0
                 eval_done = False
                 eval_state = env.reset()

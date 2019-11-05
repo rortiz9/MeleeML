@@ -106,12 +106,8 @@ class MeleeEnv(gym.Env):
         p2_score = (1000 * (self.gamestate.opponent_state.stock - p2_stock) -
                    (self.gamestate.opponent_state.percent - p2_percent))
 
-        if self.gamestate.ai_state.stock == 0:
-            p1_score = -10000
-            done = True
-
-        if self.gamestate.opponent_state.stock == 0:
-            p2_score = -10000
+        if (self.gamestate.ai_state.stock == 0
+                or self.gamestate.opponent_state.stock == 0):
             done = True
 
         reward = p1_score - p2_score
