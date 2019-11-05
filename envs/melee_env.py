@@ -11,6 +11,7 @@ class MeleeEnv(gym.Env):
                  iso_path='../smash.iso'):
         self.logger = None
         self.self_play = self_play
+        self.first_time_in_menu = True
 
         if log:
             self.logger = melee.logger.Logger()
@@ -136,6 +137,7 @@ class MeleeEnv(gym.Env):
 
     def reset(self):
         self.gamestate.step()
+        count = 0
 
         while self.gamestate.menu_state not in [
                 melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH]:
@@ -155,11 +157,17 @@ class MeleeEnv(gym.Env):
                             opponent_port=1,
                             controller=self.player2,
                             start=True)
+                count += 1
+                if not self.first_time_in_menu and count%10  == 2:
+                    melee.menuhelper.skippostgame(controller=self.player1)
+
             elif self.gamestate.menu_state == melee.enums.Menu.STAGE_SELECT:
                 melee.menuhelper.choosestage(
                         stage=melee.enums.Stage.FINAL_DESTINATION,
                         gamestate=self.gamestate,
                         controller=self.player1)
+                self.first_time_in_menu = False
+
             elif self.gamestate.menu_state == melee.enums.Menu.POSTGAME_SCORES:
                 melee.menuhelper.skippostgame(controller=self.player1)
 
