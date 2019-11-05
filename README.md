@@ -2,9 +2,9 @@
 Machine Learning experiments in Super Smash Bros. Melee.
 
 ## Libmelee
-Run to example.py to collect demostration data from Melee
+Run example.py to collect demostration data from Melee
 https://github.com/chsahit/libmelee
 
 ## Dolphin
-Build Memorywatcher-rebased branch to collect button inputs
+Build memorywatcher-rebased branch to read button inputs
 https://github.com/chsahit/dolphin/tree/memorywatcher-rebased
