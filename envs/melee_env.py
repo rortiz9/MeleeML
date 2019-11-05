@@ -28,10 +28,6 @@ class MeleeEnv(gym.Env):
         self.gamestate = melee.gamestate.GameState(self.dolphin)
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
         self.p1_turn = True
-        self.p1_stock = 4
-        self.p1_percent = 0.0
-        self.p2_stock = 4
-        self.p2_percent = 0.0
 
         if self.self_play:
             self.player2 = melee.controller.Controller(port=2, dolphin=self.dolphin)
@@ -141,6 +137,10 @@ class MeleeEnv(gym.Env):
         return state, reward, done
 
     def reset(self):
+        self.p1_stock = 4
+        self.p1_percent = 0.0
+        self.p2_stock = 4
+        self.p2_percent = 0.0
         self.gamestate.step()
 
         while self.gamestate.menu_state not in [
