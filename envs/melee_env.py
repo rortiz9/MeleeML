@@ -39,8 +39,9 @@ class MeleeEnv(gym.Env):
             self.player2.connect()
 
     def _strip_state(self, state):
+        state = [self.gamestate.stage.value] + state
         state = np.array(state)
-        state = state[~np.isnan(state)]
+        state = np.delete(state, [10, 11, 27, 28])
         return state
     
     def step(self, action):
@@ -56,34 +57,44 @@ class MeleeEnv(gym.Env):
         if not self.p1_turn:
             controller = self.player2
 
-        if action[6]:
-            controller.press_button(melee.enums.Button.BUTTON_A)
-        elif action[7]:
-            controller.press_button(melee.enums.Button.BUTTON_B)
-        elif action[8]:
-            controller.press_button(melee.enums.Button.BUTTON_X)
-        elif action[9]:
-            controller.press_button(melee.enums.Button.BUTTON_Y)
-        elif action[10]:
-            controller.press_button(melee.enums.Button.BUTTON_Z)
-        elif action[11]:
-            controller.press_button(melee.enums.Button.BUTTON_D_UP)
-        elif action[12]:
-            controller.press_button(melee.enums.Button.BUTTON_D_DOWN)
-        elif action[13]:
-            controller.press_button(melee.enums.Button.BUTTON_D_LEFT)
-        elif action[14]:
-            controller.press_button(melee.enums.Button.BUTTON_D_RIGHT)
-        elif action[15]:
-            controller.empty_input()
+        controller.tilt_analog(
+                melee.enums.Button.BUTTON_MAIN, action[2], action[3])
+        controller.tilt_analog(
+                melee.enums.Button.BUTTON_C, action[4], action[5])
+        controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
+        controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
 
-        if not action[15]:
-            controller.tilt_analog(
-                    melee.enums.Button.BUTTON_MAIN, action[0], action[1])
-            controller.tilt_analog(
-                    melee.enums.Button.BUTTON_C, action[2], action[3])
-            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[4])
-            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[5])
+        button = None
+
+        if action[6]:
+            button = melee.enums.Button.BUTTON_A
+        elif action[7]:
+            button = melee.enums.Button.BUTTON_B
+        elif action[8]:
+            button = melee.enums.Button.BUTTON_X
+        elif action[9]:
+            button = melee.enums.Button.BUTTON_Y
+        elif action[10]:
+            button = melee.enums.Button.BUTTON_Z
+        elif action[11]:
+            button = melee.enums.Button.BUTTON_D_UP
+        elif action[12]:
+            button = melee.enums.Button.BUTTON_D_DOWN
+        elif action[13]:
+            button = melee.enums.Button.BUTTON_D_LEFT
+        elif action[14]:
+            button = melee.enums.Button.BUTTON_D_RIGHT
+
+        for item in melee.enums.Button:
+            if item == melee.enums.Button.BUTTON_MAIN:
+                continue
+            if item == melee.enums.Button.BUTTON_C:
+                continue
+
+            if item == button:
+                controller.press_button(item)
+            else:
+                controller.release_button(item)
 
         controller.flush()
         self.gamestate.step()

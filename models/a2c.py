@@ -15,10 +15,10 @@ class A2C:
                  env,
                  lr=0.0001,
                  gamma=0.99,
-                 state_size=34,
+                 state_size=31,
                  cont_acts=6,
-                 disc_acts=11,
-                 entropy_reg=0.1,
+                 disc_acts=10,
+                 entropy_reg=0.01,
                  network_width=128,
                  model_path='weights/'):
         self.env = env
