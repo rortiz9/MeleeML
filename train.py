@@ -39,6 +39,7 @@ def main():
         agent.load_model(args.load_model)
 
     if args.warm_start:
+        # TODO: converting one-hot actions to joystick inputs
         states, actions = get_data_from_logs(args.warm_start)
 
         for i in range(states.shape[0]):
