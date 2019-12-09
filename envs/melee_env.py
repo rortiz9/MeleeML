@@ -44,7 +44,7 @@ class MeleeEnv(gym.Env):
         state = np.array(state)
         state = np.delete(state, [10, 11, 27, 28])
         return state
-    
+
     def step(self, action):
         self.gamestate.step()
         controller = self.player1
@@ -77,7 +77,7 @@ class MeleeEnv(gym.Env):
             button = melee.enums.Button.BUTTON_D_LEFT
         elif action[14]:
             button = melee.enums.Button.BUTTON_D_RIGHT
-        
+
         if action[15]:
             controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
             controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
@@ -190,6 +190,26 @@ class MeleeEnv(gym.Env):
             self.gamestate.step()
 
         return self._strip_state(self.gamestate.tolist())
+
+    # reformats one hot action to how it was written in the data
+    def _one_hot_to_action(one_hot_action, action_set):
+        code_to_shield = {0: 0, 1: 65, 2: 150}
+        code_to_analog = {0: 0, 1: 55, 2: 127, 3: 155, 4: 205}
+        code_to_c_stick = {0: (127, 127), 1: (50, 127), 2: (50, 50), 3: (50, 205),
+                           4: (205, 127), 5: (205, 50), 6: (205, 205),  7: (127,254),  8: (127, 1)}
+        intermediate_action = action_set[np.where(one_hot_action == 1)[0]]
+        # see dataset.py for structure for intermediate action
+        action = np.zeros((16))
+        action[:2] = intermediate_action[:2]
+        action[2] = intermediate_action[2]
+        action[3] = intermediate_action[3]
+        action[10] = code_to_shield[intermediate_action[4]]
+        action[12] = code_to_analog[intermediate_action[5]]
+        action[13] = code_to_analog[intermediate_action[6]]
+        c_stick = code_to_c_stick[intermediate_action[7]]
+        action[14] = c_stick[0]
+        action[15] = c_stick[1]
+        return action
 
     def close(self):
         self.dolphin.terminate()

@@ -19,7 +19,9 @@ gamma = 0.99
 num_steps = 300
 max_episodes = 3000
 
-def _main():
+# this is just here as a direct copy-paste from:
+# https://towardsdatascience.com/understanding-actor-critic-methods-931b97b6df3f
+def _copy_pasted_train_func():
     num_inputs = env.observation_space.shape[0]
     num_outputs = env.action_space.n
 
