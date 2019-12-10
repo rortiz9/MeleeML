@@ -6,6 +6,7 @@ import os
 
 from melee import enums
 
+
 def get_data_from_logs(file_dir, both=True, one_hot_actions = False):
     file_list = os.listdir(file_dir)
 
@@ -43,7 +44,22 @@ def read_data(file_path, num_states=31, num_actions=32):
     return states, actions
 
 
+"""
+Params: states
+Return: New Normalized States
+495 new state size
+indexes [2, 3, 240, 245, 246, 249, 250, 487, 492, 493] Normalize from -1 to 1
+rest is 0 to 1
+"""
 def preprocess_states(states):
+    # Normalize Data
+    states[:, 0] /= 26
+    # character, x, y, percent, stock, action_frame, jumps_left, speed_x, speed_y
+    nommalizing_per_player = np.array([66, 300, 250, 1000, 4, 120, 10, 100, 100])
+    nommalizing_indexes = np.array([0, 1, 2, 3, 4, 7, 10, 12, 13])
+    states[:, 1:16][:, nommalizing_indexes] = states[:, 1:16][:, nommalizing_indexes] / nommalizing_per_player
+    states[:, 16:][:, nommalizing_indexes] = states[:, 16:][:, nommalizing_indexes] / nommalizing_per_player
+
     # Convert Actions to One Hot Encodeing
     num_actions = 233
     action2idx_mapping = dict()
@@ -64,6 +80,7 @@ def preprocess_states(states):
     new_states = np.hstack([states[:, :7], p1_actions, states[:, 8:22], p2_actions, states[:, 23:]])
 
     return new_states
+
 
 def preprocess_actions(actions):
     '''

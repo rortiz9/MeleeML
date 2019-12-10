@@ -1,6 +1,7 @@
 import gym
 import melee
 import numpy as np
+from dataset import preprocess_states
 
 
 class MeleeEnv(gym.Env):
@@ -43,6 +44,7 @@ class MeleeEnv(gym.Env):
         state = [self.gamestate.stage.value] + state
         state = np.array(state)
         state = np.delete(state, [10, 11, 27, 28])
+        state = preprocess_states(state)
         return state
 
     def step(self, action):

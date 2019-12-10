@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import pandas as pd
 from models.ActorCriticPolicy import ActorCriticPolicy
-from dataset import *
+from envs.dataset import *
 
 # hyperparameters
 learning_rate = 3e-4

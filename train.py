@@ -3,7 +3,7 @@ import melee
 import numpy as np
 import time
 
-from dataset import get_data_from_logs
+from envs.dataset import get_data_from_logs
 from models.a2c import A2C
 from envs.melee_env import MeleeEnv
 
@@ -39,6 +39,7 @@ def main():
         agent.load_model(args.load_model)
 
     if args.warm_start:
+        print('warm_start')
         states, actions = get_data_from_logs(args.warm_start)
 
         for i in range(states.shape[0]):
@@ -85,6 +86,7 @@ def main():
                         env.gamestate.opponent_state.stock == 0)):
                     env.gamestate.step()
 
+    print('Start Self Train')
     for e in range(args.num_episodes):
         done = False
         states = []
@@ -111,6 +113,24 @@ def main():
                 env.gamestate.ai_state.stock == 0 or
                 env.gamestate.opponent_state.stock == 0)):
             env.gamestate.step()
+
+        if args.eval and e % 10 == 9:
+            eval_score = 0
+            eval_done = False
+            eval_state = env.reset()
+
+            while not eval_done:
+                eval_action = agent.act(eval_state)
+                eval_state, eval_reward, eval_done = env.step(eval_action)
+                eval_score += eval_reward
+
+            print(eval_score)
+
+            while (env.gamestate.menu_state in [
+                melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH] and (
+                    env.gamestate.ai_state.stock == 0 or
+                    env.gamestate.opponent_state.stock == 0)):
+                env.gamestate.step()
 
     env.close()
 
