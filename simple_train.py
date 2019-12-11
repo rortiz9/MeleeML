@@ -48,7 +48,6 @@ def main():
     env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,
-                   self_play=args.self_play,
                    iso_path=args.iso_path)
     losses = do_warm_start(model, ac_optimizer, env, states, actions)
     plt.plot(losses)
@@ -60,7 +59,8 @@ def do_warm_start(model, optimizer, env, states, actions):
     for i in range(states.shape[0]):
         if i % 10000 == 0:
             print(i)
-            val_loss, val_act, val_crit = validate_on_cpu(model, states, actions)
+            #val_loss, val_act, val_crit = validate_on_dataset(model, states, actions)
+            val_loss, val_act, val_crit = validate_on_cpu(model, env)
             mean_losses.append(val_loss)
             mean_actors.append(val_act)
             mean_critics.append(val_crit)

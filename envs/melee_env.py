@@ -128,14 +128,6 @@ class MeleeEnv(gym.Env):
                         opponent_port=2,
                         controller=self.player1)
 
-                if self.self_play:
-                    melee.menuhelper.choosecharacter(
-                            character=melee.enums.Character.FOX,
-                            gamestate=self.gamestate,
-                            port=2,
-                            opponent_port=1,
-                            controller=self.player2,
-                            start=True)
                 count += 1
                 if not self.first_time_in_menu and count%10  == 2:
                     melee.menuhelper.skippostgame(controller=self.player1)
@@ -150,13 +142,9 @@ class MeleeEnv(gym.Env):
             elif self.gamestate.menu_state == melee.enums.Menu.POSTGAME_SCORES:
                 melee.menuhelper.skippostgame(controller=self.player1)
 
-                if self.self_play:
-                    melee.menuhelper.skippostgame(controller=self.player2)
 
             self.player1.flush()
 
-            if self.self_play:
-                self.player2.flush()
 
             self.gamestate.step()
 
