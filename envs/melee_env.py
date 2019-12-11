@@ -6,10 +6,12 @@ from dataset import preprocess_states
 
 class MeleeEnv(gym.Env):
     def __init__(self,
+                 action_set,
                  log=False,
                  render=False,
                  self_play=False,
-                 iso_path='../smash.iso'):
+                 iso_path='../smash.iso',
+                 action_set):
         self.logger = None
         self.self_play = self_play
         self.first_time_in_menu = True
@@ -59,26 +61,26 @@ class MeleeEnv(gym.Env):
         controller.tilt_analog(
                 melee.enums.Button.BUTTON_C, action[4], action[5])
 
-        button = None
+        button = list()
 
         if action[6]:
-            button = melee.enums.Button.BUTTON_A
+            button.append(melee.enums.Button.BUTTON_A)
         elif action[7]:
-            button = melee.enums.Button.BUTTON_B
+            button.append(melee.enums.Button.BUTTON_B)
         elif action[8]:
-            button = melee.enums.Button.BUTTON_X
+            button.append(melee.enums.Button.BUTTON_X)
         elif action[9]:
-            button = melee.enums.Button.BUTTON_Y
+            button.append(melee.enums.Button.BUTTON_Y)
         elif action[10]:
-            button = melee.enums.Button.BUTTON_Z
+            button.append(melee.enums.Button.BUTTON_Z)
         elif action[11]:
-            button = melee.enums.Button.BUTTON_D_UP
+            button.append(melee.enums.Button.BUTTON_D_UP)
         elif action[12]:
-            button = melee.enums.Button.BUTTON_D_DOWN
+            button.append(melee.enums.Button.BUTTON_D_DOWN)
         elif action[13]:
-            button = melee.enums.Button.BUTTON_D_LEFT
+            button.append(melee.enums.Button.BUTTON_D_LEFT)
         elif action[14]:
-            button = melee.enums.Button.BUTTON_D_RIGHT
+            button.append(melee.enums.Button.BUTTON_D_RIGHT)
 
         if action[15]:
             controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
@@ -95,7 +97,7 @@ class MeleeEnv(gym.Env):
                     melee.enums.Button.BUTTON_R]:
                 continue
 
-            if item == button:
+            if item in button:
                 controller.press_button(item)
             else:
                 controller.release_button(item)
@@ -193,7 +195,7 @@ class MeleeEnv(gym.Env):
 
         return self._strip_state(self.gamestate.tolist())
 
-    # reformats one hot action to how it was written in the data
+    # reformats one hot action
     def _one_hot_to_action(one_hot_action, action_set):
         code_to_shield = {0: 0, 1: 65, 2: 150}
         code_to_analog = {0: 0, 1: 55, 2: 127, 3: 155, 4: 205}
@@ -202,7 +204,7 @@ class MeleeEnv(gym.Env):
         intermediate_action = action_set[np.where(one_hot_action == 1)[0]]
         # see dataset.py for structure for intermediate action
         action = np.zeros((16))
-        action[:2] = intermediate_action[:2]
+        '''action[:2] = intermediate_action[:2]
         action[2] = intermediate_action[2]
         action[3] = intermediate_action[3]
         action[10] = code_to_shield[intermediate_action[4]]
@@ -210,7 +212,19 @@ class MeleeEnv(gym.Env):
         action[13] = code_to_analog[intermediate_action[6]]
         c_stick = code_to_c_stick[intermediate_action[7]]
         action[14] = c_stick[0]
-        action[15] = c_stick[1]
+        action[15] = c_stick[1]'''
+        action[0] = code_to_shield[intermediate_action[4]]
+        action[2] = code_to_analog[intermediate_action[5]]
+        action[3] = code_to_analog[intermediate_action[6]]
+        c_stick = code_to_c_stick[intermediate_action[7]]
+        action[4] = c_stick[0]
+        action[5] = c_stick[1]
+        action[6] = intermediate_action[0]
+        action[7] = intermediate_action[1]
+        action[8] = intermediate_action[2]
+        action[10] =  intermediate_action[3]
+        action[15] =  1
+
         return action
 
     def close(self):
