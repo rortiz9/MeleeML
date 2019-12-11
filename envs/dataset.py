@@ -8,14 +8,18 @@ from melee import enums
 
 
 def get_data_from_logs(file_dir, both=True, one_hot_actions = False):
-    file_list = os.listdir(file_dir)
+    file_list = list()
+    for root, dirnames, filenames in os.walk(file_dir):
+        for filename in filenames:
+            if 'game' in filename and '.csv' in filename:
+                file_list.append(os.path.join(root, filename))
 
     states = list()
     actions = list()
 
-    for file in file_list:
-        if 'game' in file and '.csv' in file:
-            state, action = read_data(file_dir + file)
+    for file_path in file_list:
+        try:
+            state, action = read_data(file_path)
             num_actions = action.shape[1]//2
             num_states = state.shape[1]//2
             if both:
@@ -28,6 +32,10 @@ def get_data_from_logs(file_dir, both=True, one_hot_actions = False):
                 # Use only player1's actions
                 states.append(state)
                 actions.append(action[:, :num_actions])
+
+        except:
+            print("File with possibly no data")
+            print(file_path)
 
     # Preprocess
     states = preprocess_states(np.vstack(states))
