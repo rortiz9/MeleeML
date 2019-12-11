@@ -61,7 +61,7 @@ def main():
 def do_warm_start(model, env, states, actions):
     gen_losses = list()
     discrim_losses = list()
-    for i in range(1):
+    for i in range(10):
         print(i)
         gen_loss, discrim_loss = model.update(1000)
         gen_losses.append(gen_loss)
