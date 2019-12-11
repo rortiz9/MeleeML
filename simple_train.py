@@ -59,10 +59,8 @@ def do_warm_start(model, optimizer, env, states, actions):
     mean_losses = list()
     mean_actors, mean_critics = list(), list()
     for i in range(states.shape[0]):
-        if i % 10000 == 0:
-            print(i)
-        if i == 250000:
-            print(i)
+        if i % 50000 == 0:
+            print("iter: ", i)
             #val_loss, val_act, val_crit = validate_on_dataset(model, states, actions)
             val_loss = validate_on_cpu(model, env)
             mean_losses.append(val_loss)
