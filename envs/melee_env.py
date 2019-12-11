@@ -12,6 +12,14 @@ class MeleeEnv(gym.Env):
         self.logger = None
         self.first_time_in_menu = True
         self.action_set = action_set
+
+        lows = np.array([0.0] * 495)
+        lows[[2, 3, 240, 245, 246, 249, 250, 487, 492, 493]] = -1.0
+
+        self.observation_space = gym.spaces.Box(
+                low=lows, high=np.array([1.0] * 495), dtype=np.float32)
+        self.action_space = gym.spaces.MultiBinary(action_set.shape[0])
+
         if log:
             self.logger = melee.logger.Logger()
 
@@ -127,9 +135,9 @@ class MeleeEnv(gym.Env):
                         port=1,
                         opponent_port=2,
                         controller=self.player1)
-
+                
                 count += 1
-                if not self.first_time_in_menu and count%10  == 2:
+                if not self.first_time_in_menu and count % 10 == 2:
                     melee.menuhelper.skippostgame(controller=self.player1)
 
             elif self.gamestate.menu_state == melee.enums.Menu.STAGE_SELECT:
@@ -141,10 +149,6 @@ class MeleeEnv(gym.Env):
 
             elif self.gamestate.menu_state == melee.enums.Menu.POSTGAME_SCORES:
                 melee.menuhelper.skippostgame(controller=self.player1)
-
-
-            self.player1.flush()
-
 
             self.gamestate.step()
 
