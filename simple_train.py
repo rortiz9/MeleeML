@@ -1,4 +1,5 @@
 import sys
+import melee
 import torch
 import gym
 import time
@@ -59,11 +60,11 @@ def do_warm_start(model, optimizer, env, states, actions):
     for i in range(states.shape[0]):
         if i % 10000 == 0:
             print(i)
+        if i == 250000:
+            print(i)
             #val_loss, val_act, val_crit = validate_on_dataset(model, states, actions)
-            val_loss, val_act, val_crit = validate_on_cpu(model, env)
+            val_loss = validate_on_cpu(model, env)
             mean_losses.append(val_loss)
-            mean_actors.append(val_act)
-            mean_critics.append(val_crit)
         state = states[i]
         if state[5] == 0 or state[20] == 0:
                 continue
@@ -160,7 +161,11 @@ def validate_on_cpu(model, env):
     eval_score = 0
     eval_state = env.reset()
     while not eval_done:
-        eval_action = model.forward(eval_state)
+        out = model.forward(eval_state)[1]
+        action_dist = torch.distributions.Categorical(out.squeeze(0))
+        action_idx = action_dist.sample()
+        eval_action = torch.zeros((env.action_set.shape[0]))
+        eval_action[action_idx] = 1
         eval_state, eval_reward, eval_done = env.step(eval_action)
         eval_score += eval_reward
     while (env.gamestate.menu_state in [

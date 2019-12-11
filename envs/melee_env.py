@@ -135,7 +135,7 @@ class MeleeEnv(gym.Env):
                         port=1,
                         opponent_port=2,
                         controller=self.player1)
-                
+
                 count += 1
                 if not self.first_time_in_menu and count % 10 == 2:
                     melee.menuhelper.skippostgame(controller=self.player1)
@@ -155,14 +155,14 @@ class MeleeEnv(gym.Env):
         return self._strip_state(self.gamestate.tolist())
 
     # reformats one hot action
-    def _one_hot_to_action(one_hot_action, action_set):
+    def _one_hot_to_action(self, one_hot_action, action_set):
         code_to_shield = {0: 0, 1: 65/255., 2: 150/255.}
         code_to_analog = {0: 0, 1: 55/255., 2: 127/255., 3: 155/255., 4: 205/255.}
         code_to_c_stick = {0: (127/255., 127/255.), 1: (50/255., 127/255.), 2: (50/255., 50/255.),
                             3: (50, 205/255.),
                            4: (205/255., 127/255.), 5: (205/255., 50/255.), 6: (205/255., 205/255.),
                            7: (127/255.,254/255.),  8: (127/255., 1/255.)}
-        intermediate_action = action_set[np.where(one_hot_action == 1)[0]]
+        intermediate_action = action_set[np.where(one_hot_action == 1)[0]][0]
         # see dataset.py for structure for intermediate action
         action = np.zeros((16))
         action[0] = code_to_shield[intermediate_action[4]]

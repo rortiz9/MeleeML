@@ -52,6 +52,8 @@ indexes [2, 3, 240, 245, 246, 249, 250, 487, 492, 493] Normalize from -1 to 1
 rest is 0 to 1
 """
 def preprocess_states(states):
+    if len(states.shape) == 1:
+        states = states.reshape(1,  -1)
     # Normalize Data
     states[:, 0] /= 26
     # character, x, y, percent, stock, action_frame, jumps_left, speed_x, speed_y
