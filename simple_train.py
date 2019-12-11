@@ -27,6 +27,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--name', default=time.asctime(), help='Name of this run')
     parser.add_argument('--log', default=False, action='store_true')
+    parser.add_argument('--data', default='../test_data/', help='Path to data')
     parser.add_argument(
             '--render', default=False, action='store_true', help='Display Dolphin GUI')
     parser.add_argument(
@@ -43,7 +44,7 @@ def main():
             '--num_episodes', type=int, default=10, help='# of games to play')
     args = parser.parse_args()
 
-    states, actions, action_set = get_data_from_logs("/home/sc/school/cs8803/libmelee/logs/", one_hot_actions = True)
+    states, actions, action_set = get_data_from_logs(args.data, one_hot_actions = True)
     model = ActorCriticPolicy(495, 345, 200)
     ac_optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     env = MeleeEnv(action_set,
