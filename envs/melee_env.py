@@ -1,8 +1,7 @@
 import gym
 import melee
 import numpy as np
-from dataset import preprocess_states
-
+from envs.dataset import preprocess_states
 
 class MeleeEnv(gym.Env):
     def __init__(self,
@@ -10,12 +9,11 @@ class MeleeEnv(gym.Env):
                  log=False,
                  render=False,
                  self_play=False,
-                 iso_path='../smash.iso',
-                 action_set):
+                 iso_path='../smash.iso'):
         self.logger = None
         self.self_play = self_play
         self.first_time_in_menu = True
-
+        self.action_set = action_set
         if log:
             self.logger = melee.logger.Logger()
 
@@ -51,6 +49,7 @@ class MeleeEnv(gym.Env):
 
     def step(self, action):
         self.gamestate.step()
+        action = self._one_hot_to_action(action, self.action_set)
         controller = self.player1
 
         if not self.p1_turn:
@@ -65,21 +64,21 @@ class MeleeEnv(gym.Env):
 
         if action[6]:
             button.append(melee.enums.Button.BUTTON_A)
-        elif action[7]:
+        if action[7]:
             button.append(melee.enums.Button.BUTTON_B)
-        elif action[8]:
+        if action[8]:
             button.append(melee.enums.Button.BUTTON_X)
-        elif action[9]:
+        if action[9]:
             button.append(melee.enums.Button.BUTTON_Y)
-        elif action[10]:
+        if action[10]:
             button.append(melee.enums.Button.BUTTON_Z)
-        elif action[11]:
+        if action[11]:
             button.append(melee.enums.Button.BUTTON_D_UP)
-        elif action[12]:
+        if action[12]:
             button.append(melee.enums.Button.BUTTON_D_DOWN)
-        elif action[13]:
+        if action[13]:
             button.append(melee.enums.Button.BUTTON_D_LEFT)
-        elif action[14]:
+        if action[14]:
             button.append(melee.enums.Button.BUTTON_D_RIGHT)
 
         if action[15]:
@@ -197,10 +196,12 @@ class MeleeEnv(gym.Env):
 
     # reformats one hot action
     def _one_hot_to_action(one_hot_action, action_set):
-        code_to_shield = {0: 0, 1: 65, 2: 150}
-        code_to_analog = {0: 0, 1: 55, 2: 127, 3: 155, 4: 205}
-        code_to_c_stick = {0: (127, 127), 1: (50, 127), 2: (50, 50), 3: (50, 205),
-                           4: (205, 127), 5: (205, 50), 6: (205, 205),  7: (127,254),  8: (127, 1)}
+        code_to_shield = {0: 0, 1: 65/255., 2: 150/255.}
+        code_to_analog = {0: 0, 1: 55/255., 2: 127/255., 3: 155/255., 4: 205/255.}
+        code_to_c_stick = {0: (127/255., 127/255.), 1: (50/255., 127/255.), 2: (50/255., 50/255.),
+                            3: (50, 205/255.),
+                           4: (205/255., 127/255.), 5: (205/255., 50/255.), 6: (205/255., 205/255.),
+                           7: (127/255.,254/255.),  8: (127/255., 1/255.)}
         intermediate_action = action_set[np.where(one_hot_action == 1)[0]]
         # see dataset.py for structure for intermediate action
         action = np.zeros((16))

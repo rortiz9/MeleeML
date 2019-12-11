@@ -1,6 +1,7 @@
 import sys
 import torch
 import gym
+import time
 import numpy as np
 import torch.nn as nn
 import torch.optim as optim
@@ -10,6 +11,8 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from models.ActorCriticPolicy import ActorCriticPolicy
 from envs.dataset import *
+from envs.melee_env import MeleeEnv
+import argparse
 
 # hyperparameters
 learning_rate = 3e-4
@@ -20,17 +23,33 @@ num_steps = 300
 max_episodes = 3000
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--name', default=time.asctime(), help='Name of this run')
+    parser.add_argument('--log', default=False, action='store_true')
+    parser.add_argument(
+            '--render', default=False, action='store_true', help='Display Dolphin GUI')
+    parser.add_argument(
+            '--eval', default=False, action='store_true', help='Run evaluation games')
+    parser.add_argument(
+            '--warm_start', default=None, help='Directory of human replay data')
+    parser.add_argument('--self_play', default=False, action='store_true')
+    parser.add_argument(
+            '--iso_path', default='../smash.iso', help='Path to MELEE iso')
+    parser.add_argument(
+            '--model_path', default='weights/', help='Path to store weights')
+    parser.add_argument('--load_model', default=None, help='Load model from file')
+    parser.add_argument(
+            '--num_episodes', type=int, default=10, help='# of games to play')
+    args = parser.parse_args()
+
     states, actions, action_set = get_data_from_logs("/home/sc/school/cs8803/libmelee/logs/", one_hot_actions = True)
     model = ActorCriticPolicy(495, 345, 200)
     ac_optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-    '''
     env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,
                    self_play=args.self_play,
                    iso_path=args.iso_path)
-    '''
-    env = None
     losses = do_warm_start(model, ac_optimizer, env, states, actions)
     plt.plot(losses)
     plt.show()
@@ -41,7 +60,7 @@ def do_warm_start(model, optimizer, env, states, actions):
     for i in range(states.shape[0]):
         if i % 10000 == 0:
             print(i)
-            val_loss, val_act, val_crit = validate_on_data(model, states, actions)
+            val_loss, val_act, val_crit = validate_on_cpu(model, states, actions)
             mean_losses.append(val_loss)
             mean_actors.append(val_act)
             mean_critics.append(val_crit)
