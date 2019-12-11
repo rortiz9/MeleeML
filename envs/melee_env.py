@@ -1,7 +1,7 @@
 import gym
 import melee
 import numpy as np
-from envs.dataset import preprocess_states
+from dataset import preprocess_states
 
 class MeleeEnv(gym.Env):
     def __init__(self,
@@ -41,6 +41,9 @@ class MeleeEnv(gym.Env):
         state = np.delete(state, [10, 11, 27, 28])
         state = preprocess_states(state)
         return state
+
+    def get_state_size(self):
+        return self.observation_space.shape
 
     def step(self, action):
         self.gamestate.step()
@@ -109,6 +112,12 @@ class MeleeEnv(gym.Env):
         if (self.gamestate.ai_state.stock == 0
                 or self.gamestate.opponent_state.stock == 0):
             done = True
+            
+            while (self.gamestate.menu_state in [
+                melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH] and (
+                    self.gamestate.ai_state.stock == 0 or
+                    self.gamestate.opponent_state.stock == 0)):
+                self.gamestate.step()
 
         reward = p1_score - p2_score
 
@@ -116,7 +125,9 @@ class MeleeEnv(gym.Env):
             self.logger.logframe(self.gamestate)
             self.logger.writeframe()
 
-        return state, reward, done
+        info = {'P1': (self.p1_stock, self.p1_percent), 'P2': (self.p2_stock, self.p2_percent)}
+
+        return state, reward, done, info
 
     def reset(self):
         self.p1_stock = 4
