@@ -150,6 +150,7 @@ class MeleeEnv(gym.Env):
             elif self.gamestate.menu_state == melee.enums.Menu.POSTGAME_SCORES:
                 melee.menuhelper.skippostgame(controller=self.player1)
 
+            self.player1.flush()
             self.gamestate.step()
 
         return self._strip_state(self.gamestate.tolist())
