@@ -58,7 +58,7 @@ def main():
             next_state = states[i + 1]
             done = False
             p1_score = (1000 * (next_state[5] - state[5]) -
-                       (next_state[4] - state[4]))
+                       (next_state[4] - state[4])) - 1
             p2_score = (1000 * (next_state[20] - state[20]) -
                        (next_state[19] - state[19]))
 

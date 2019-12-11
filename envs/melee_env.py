@@ -8,19 +8,14 @@ class MeleeEnv(gym.Env):
                  action_set,
                  log=False,
                  render=False,
-                 self_play=False,
                  iso_path='../smash.iso'):
         self.logger = None
-        self.self_play = self_play
         self.first_time_in_menu = True
         self.action_set = action_set
         if log:
             self.logger = melee.logger.Logger()
 
         opponent = melee.enums.ControllerType.GCN_ADAPTER
-
-        if self.self_play:
-            opponent = melee.enums.ControllerType.STANDARD
 
         self.dolphin = melee.dolphin.Dolphin(
                 ai_port=1,
@@ -29,16 +24,8 @@ class MeleeEnv(gym.Env):
                 logger=self.logger)
         self.gamestate = melee.gamestate.GameState(self.dolphin)
         self.player1 = melee.controller.Controller(port=1, dolphin=self.dolphin)
-        self.p1_turn = True
-
-        if self.self_play:
-            self.player2 = melee.controller.Controller(port=2, dolphin=self.dolphin)
-
         self.dolphin.run(render=render, iso_path=iso_path)
         self.player1.connect()
-
-        if self_play:
-            self.player2.connect()
 
     def _strip_state(self, state):
         state = [self.gamestate.stage.value] + state
@@ -52,9 +39,8 @@ class MeleeEnv(gym.Env):
         action = self._one_hot_to_action(action, self.action_set)
         controller = self.player1
 
-        if not self.p1_turn:
-            controller = self.player2
-
+        controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
+        controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
         controller.tilt_analog(
                 melee.enums.Button.BUTTON_MAIN, action[2], action[3])
         controller.tilt_analog(
@@ -80,13 +66,6 @@ class MeleeEnv(gym.Env):
             button.append(melee.enums.Button.BUTTON_D_LEFT)
         if action[14]:
             button.append(melee.enums.Button.BUTTON_D_RIGHT)
-
-        if action[15]:
-            controller.press_shoulder(melee.enums.Button.BUTTON_L, action[0])
-            controller.press_shoulder(melee.enums.Button.BUTTON_R, action[1])
-        else:
-            controller.press_shoulder(melee.enums.Button.BUTTON_L, 0)
-            controller.press_shoulder(melee.enums.Button.BUTTON_R, 0)
 
         for item in melee.enums.Button:
             if item in [
@@ -124,17 +103,6 @@ class MeleeEnv(gym.Env):
             done = True
 
         reward = p1_score - p2_score
-
-        if not self.p1_turn:
-            state = []
-            state.append(self.gamestate.stage.value)
-            state = state + self.gamestate.opponent_state.tolist()
-            state = state + self.gamestate.ai_state.tolist()
-            state = self._strip_state(state)
-            reward = p2_score - p1_score
-
-        if self.self_play:
-            self.p1_turn = not self.p1_turn
 
         if self.logger:
             self.logger.logframe(self.gamestate)
@@ -205,15 +173,6 @@ class MeleeEnv(gym.Env):
         intermediate_action = action_set[np.where(one_hot_action == 1)[0]]
         # see dataset.py for structure for intermediate action
         action = np.zeros((16))
-        '''action[:2] = intermediate_action[:2]
-        action[2] = intermediate_action[2]
-        action[3] = intermediate_action[3]
-        action[10] = code_to_shield[intermediate_action[4]]
-        action[12] = code_to_analog[intermediate_action[5]]
-        action[13] = code_to_analog[intermediate_action[6]]
-        c_stick = code_to_c_stick[intermediate_action[7]]
-        action[14] = c_stick[0]
-        action[15] = c_stick[1]'''
         action[0] = code_to_shield[intermediate_action[4]]
         action[2] = code_to_analog[intermediate_action[5]]
         action[3] = code_to_analog[intermediate_action[6]]
@@ -224,7 +183,6 @@ class MeleeEnv(gym.Env):
         action[7] = intermediate_action[1]
         action[8] = intermediate_action[2]
         action[10] =  intermediate_action[3]
-        action[15] =  1
 
         return action
 
