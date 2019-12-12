@@ -116,6 +116,6 @@ class GAIL:
         torch.save(self.discriminator.state_dict(), '{}/{}_discriminator.pth'.format(directory,name))
 
     def load(self, directory='./preTrained', name='GAIL'):
-        self.actor.load_state_dict(torch.load('{}/{}_actor.pth'.format(directory,name)))
-        self.discriminator.load_state_dict(torch.load('{}/{}_discriminator.pth'.format(directory,name)))
+        self.actor.load_state_dict(torch.load('{}/{}_actor.pth'.format(directory,name), map_location=torch.device('cpu')))
+        self.discriminator.load_state_dict(torch.load('{}/{}_discriminator.pth'.format(directory,name), map_location=torch.device('cpu')))
 

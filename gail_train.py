@@ -44,17 +44,18 @@ def main():
     states, actions, action_set = get_data_from_logs(args.data, one_hot_actions = True)
     print("samples: ", states.shape[0])
     model = GAIL(states, actions, action_set, lr, betas)
+    model.load()
     env = None
-    '''
     env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,
                    iso_path=args.iso_path)
-    '''
-    gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
-    #env.close()
+    #gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
+    validate_on_cpu(model, env)
+    env.close()
 
     # Graph
+    '''
     fig, ax = plt.subplots(2)
     ax[0].set_title("generator losses")
     ax[0].plot(gen_losses)
@@ -64,7 +65,7 @@ def main():
 
     # Save Model
     model.save()
-
+    '''
 
 def do_warm_start(model, env, states, actions):
     gen_losses = list()
@@ -86,7 +87,7 @@ def validate_on_cpu(model, env):
 
     while not eval_done:
         eval_action = model.select_action(torch.FloatTensor(eval_state))
-        eval_state, eval_reward, eval_done = env.step(eval_action)
+        eval_state, eval_reward, eval_done, _ = env.step(eval_action)
         eval_score += eval_reward
 
     while (env.gamestate.menu_state in [
