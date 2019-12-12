@@ -10,21 +10,23 @@ class Actor(nn.Module):
 
         self.l1 = nn.Linear(state_dim, 400)
         self.l2 = nn.Linear(400, 300)
-        self.l3 = nn.Linear(300, action_dim)
+        self.l3 = nn.Linear(300, 300)
+        self.l4 = nn.Linear(300, action_dim)
 
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
-        x = nn.Softmax()(self.l3(x))
+        x = F.relu(self.l3(x))
+        x = nn.Softmax()(self.l4(x))
         return x
 
 class Discriminator(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Discriminator, self).__init__()
 
-        self.l1 = nn.Linear(state_dim+action_dim, 50)
-        self.l2 = nn.Linear(50, 50)
-        self.l3 = nn.Linear(50, 1)
+        self.l1 = nn.Linear(state_dim+action_dim, 30)
+        self.l2 = nn.Linear(30, 30)
+        self.l3 = nn.Linear(30, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 1)

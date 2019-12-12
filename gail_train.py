@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--log', default=False, action='store_true')
     parser.add_argument('--data', default='../test_data/', help='Path to data')
     parser.add_argument(
-            '--render', default=False, action='store_true', help='Display Dolphin GUI')
+            '--render', default=True, action='store_true', help='Display Dolphin GUI')
     parser.add_argument(
             '--eval', default=False, action='store_true', help='Run evaluation games')
     parser.add_argument(
@@ -44,7 +44,8 @@ def main():
     parser.add_argument(
             '--num_episodes', type=int, default=10, help='# of games to play')
     args = parser.parse_args()
-    lr = 0.0002                 # learing rate
+    #lr = 0.0002                 # learing rate
+    lr = 0.002                 # learing rate
     betas = (0.5, 0.999)        # betas for adam optimizer
     states, actions, action_set = get_data_from_logs(args.data, one_hot_actions = True)
     print("samples: ", states.shape[0])

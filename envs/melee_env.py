@@ -1,7 +1,7 @@
 import gym
 import melee
 import numpy as np
-from dataset import preprocess_states
+from envs.dataset import preprocess_states
 
 class MeleeEnv(gym.Env):
     def __init__(self,
@@ -112,7 +112,7 @@ class MeleeEnv(gym.Env):
         if (self.gamestate.ai_state.stock == 0
                 or self.gamestate.opponent_state.stock == 0):
             done = True
-            
+
             while (self.gamestate.menu_state in [
                 melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH] and (
                     self.gamestate.ai_state.stock == 0 or
