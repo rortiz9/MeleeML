@@ -1,15 +1,20 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from models.cbow import CBOW, CBOW_state
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, encoder = None):
         super(Actor, self).__init__()
-
-        self.l1 = nn.Linear(state_dim, 400)
-        self.l2 = nn.Linear(400, 200)
+        self.encoder = encoder
+        if self.encoder is None:
+            self.l1 = nn.Linear(state_dim, 400)
+            self.l2 = nn.Linear(400, 200)
+        else:
+            self.l1 = nn.Linear(state_dim, 200)
+            self.l2 = nn.Linear(200, 200)
         self.l3 = nn.Linear(200, action_dim)
 
     def forward(self, x):
@@ -19,24 +24,25 @@ class Actor(nn.Module):
         return x
 
 class Discriminator(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, encoder = None):
         super(Discriminator, self).__init__()
-
-        self.l1 = nn.Linear(state_dim+action_dim, 500)
+        self.encoder = encoder
+        if encoder is not None:
+            self.l1 =  nn.Linear(200, 500)
+        else:
+            self.l1 = nn.Linear(state_dim+action_dim, 500)
         self.l2 = nn.Linear(500, 300)
         self.l3 = nn.Linear(300, 300)
-        self.l4 = nn.Linear(300, 300)
-        self.l5 = nn.Linear(300, 300)
-        self.l6 = nn.Linear(300, 1)
+        self.l4 = nn.Linear(300, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 1)
+        if self.encoder is not None:
+            state_action = self.encoder.encode(state, action)
         x = torch.tanh(self.l1(state_action))
         x = torch.tanh(self.l2(x))
         x = torch.tanh(self.l3(x))
-        x = torch.tanh(self.l4(x))
-        x = torch.tanh(self.l5(x))
-        x = torch.sigmoid(self.l6(x))
+        x = torch.sigmoid(self.l4(x))
         return x
 
 class GAIL:
@@ -48,10 +54,16 @@ class GAIL:
         self.expert_states = expert_states
         self.expert_actions = expert_actions
 
-        self.actor = Actor(state_dim, action_dim).to(device)
+        self.state_action_enc = CBOW(state_dim,  action_dim)
+        self.state_action_enc.load()
+
+        self.state_enc = CBOW_state(state_dim)
+        self.state_enc.load()
+
+        self.actor = Actor(state_dim, action_dim, encoder = self.state_enc).to(device)
         self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr, betas=betas)
 
-        self.discriminator = Discriminator(state_dim, action_dim).to(device)
+        self.discriminator = Discriminator(state_dim, action_dim, encoder = self.state_action_enc).to(device)
         self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=betas)
 
         self.loss_fn = nn.BCELoss()
@@ -64,7 +76,7 @@ class GAIL:
         eval_action[action_idx] = 1
         return eval_action
 
-    def update(self, n_iter, batch_size=100):
+    def update(self, n_iter, batch_size=100, compress = True):
         gen_losses = list()
         discrim_losses = list()
         for i in range(n_iter):

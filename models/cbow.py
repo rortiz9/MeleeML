@@ -28,3 +28,26 @@ class CBOW(nn.Module):
     def load(self, directory='./preTrained', name='CBOW'):
         self.load_state_dict(torch.load('{}/{}_actor.pth'.format(directory,name), map_location=torch.device('cpu')))
 
+class CBOW_state(nn.Module):
+    def __init__(self, state_dim):
+        super(CBOW_state, self).__init__()
+        self.l1 = nn.Linear(state_dim, 150)
+        self.l2 = nn.Linear(150, 150)
+        self.l3 = nn.Linear(150, state_dim)
+
+    def forward(self, state):
+        x = self.encode(state)
+        x = torch.tanh(self.l3(x))
+        return x
+
+    def encode(self, state):
+        x = torch.tanh(self.l1(state))
+        x = torch.tanh(self.l2(x))
+        return x
+
+    def save(self, directory='./preTrained', name='CBOW_state'):
+        torch.save(self.state_dict(), '{}/{}_actor.pth'.format(directory,name))
+
+    def load(self, directory='./preTrained', name='CBOW_state'):
+        self.load_state_dict(torch.load('{}/{}_actor.pth'.format(directory,name), map_location=torch.device('cpu')))
+
