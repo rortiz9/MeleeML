@@ -44,7 +44,6 @@ def main():
     states, actions, action_set = get_data_from_logs(args.data, one_hot_actions = True)
     print("samples: ", states.shape[0])
     model = GAIL(states, actions, action_set, lr, betas)
-    model.load()
     env = None
     if args.warm_start:
         gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
@@ -58,6 +57,7 @@ def main():
         # Save Model
         model.save()
     if args.eval:
+        model.load()
         env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,

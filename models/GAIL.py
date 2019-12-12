@@ -25,14 +25,18 @@ class Discriminator(nn.Module):
         self.l1 = nn.Linear(state_dim+action_dim, 500)
         self.l2 = nn.Linear(500, 300)
         self.l3 = nn.Linear(300, 300)
-        self.l4 = nn.Linear(300, 1)
+        self.l4 = nn.Linear(300, 300)
+        self.l5 = nn.Linear(300, 300)
+        self.l6 = nn.Linear(300, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 1)
         x = torch.tanh(self.l1(state_action))
         x = torch.tanh(self.l2(x))
         x = torch.tanh(self.l3(x))
-        x = torch.sigmoid(self.l4(x))
+        x = torch.tanh(self.l4(x))
+        x = torch.tanh(self.l5(x))
+        x = torch.sigmoid(self.l6(x))
         return x
 
 class GAIL:
