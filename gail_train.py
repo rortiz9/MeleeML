@@ -16,13 +16,6 @@ from envs.dataset import *
 from envs.melee_env import MeleeEnv
 import argparse
 
-# hyperparameters
-learning_rate = 3e-4
-
-# Constants
-gamma = 0.99
-num_steps = 300
-max_episodes = 3000
 
 def main():
     parser = argparse.ArgumentParser()
@@ -44,6 +37,7 @@ def main():
     parser.add_argument(
             '--num_episodes', type=int, default=10, help='# of games to play')
     args = parser.parse_args()
+
     #lr = 0.0002                 # learing rate
     lr = 0.002                 # learing rate
     betas = (0.5, 0.999)        # betas for adam optimizer
@@ -59,38 +53,49 @@ def main():
     '''
     gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
     #env.close()
+
+    # Graph
     fig, ax = plt.subplots(2)
     ax[0].set_title("generator losses")
     ax[0].plot(gen_losses)
     ax[1].set_title("discriminator losses")
     ax[1].plot(discrim_losses)
     plt.show()
+
+    # Save Model
     model.save()
+
 
 def do_warm_start(model, env, states, actions):
     gen_losses = list()
     discrim_losses = list()
+    
     for i in range(400):
         print(i)
         gen_loss, discrim_loss = model.update(100, batch_size = 10)
         gen_losses.append(gen_loss)
         discrim_losses.append(discrim_loss)
     #validate_on_cpu(model, env)
+
     return gen_losses, discrim_losses
+
 
 def validate_on_cpu(model, env):
     eval_done = False
     eval_score = 0
     eval_state = env.reset()
+
     while not eval_done:
         eval_action = model.select_action(torch.FloatTensor(eval_state))
         eval_state, eval_reward, eval_done = env.step(eval_action)
         eval_score += eval_reward
+
     while (env.gamestate.menu_state in [
            melee.enums.Menu.IN_GAME, melee.enums.Menu.SUDDEN_DEATH] and (
             env.gamestate.ai_state.stock == 0 or
             env.gamestate.opponent_state.stock == 0)):
             env.gamestate.step()
+
     return eval_score
 
 if __name__ == "__main__":
