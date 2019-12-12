@@ -10,15 +10,33 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
 
         self.max_window_size = max_window_size
+        self.hidden_dim = 128
+        self.n_layers = 1
+        self.lstm = nn.LSTM(state_dim + action_dim, self.hidden_dim, self.n_layers, batch_first=True)
+        self.flatten = nn.Flatten()
         self.l1 = nn.Linear(state_dim, 400)
         self.l2 = nn.Linear(400, 200)
-        self.l3 = nn.Linear(200, action_dim)
+        self.l3 = nn.Linear((self.hidden_dim * (self.max_window_size - 1)) + 200, action_dim)
 
-    def forward(self, x):
-        x = F.relu(self.l1(x))
-        x = F.relu(self.l2(x))
-        x = nn.Softmax()(self.l3(x))
-        return x
+    def forward(self, prev_state, prev_action, current_state):
+        prev_state_action = torch.cat([prev_state, prev_action], 2)
+        batch_size = prev_state_action.shape[0]
+
+        # Lstm on Previous State Action pair
+        self.hidden = self.init_hidden(batch_size)
+        prev_state_action, self.hidden = self.lstm(prev_state_action, self.hidden)
+
+        # Embedding New State
+        current_state = F.relu(self.l1(current_state))
+        current_state = F.relu(self.l2(current_state))
+
+        x = torch.cat([self.flatten(prev_state_action), current_state], 1)
+        x = F.relu(self.l3(x))
+        return nn.Softmax()(x)
+
+    def init_hidden(self, batch_size):
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim), torch.zeros(self.n_layers, batch_size, self.hidden_dim))
+
 
 class Discriminator(nn.Module):
     def __init__(self, state_dim, action_dim, max_window_size):
@@ -101,7 +119,9 @@ class GAIL:
             indexes = [indexes]
             states = torch.FloatTensor(self.expert_states[indexes]).to(device)
             actions = torch.FloatTensor(self.expert_actions[indexes]).to(device)
-            action = self.actor(states[:, -1])
+
+            # Run Actor
+            action = self.actor(states[:, :-1], actions[:, :-1], states[:, -1])
 
             #######################
             # update discriminator
