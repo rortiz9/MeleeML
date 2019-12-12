@@ -91,7 +91,7 @@ class GAIL:
         eval_action[action_idx] = 1
         return eval_action
 
-    def update(self, n_iter, batch_size=100):
+    def update(self, n_iter, batch_size=100, entropy_penalty = True):
         gen_losses = list()
         discrim_losses = list()
         for ii in range(n_iter):
@@ -150,9 +150,15 @@ class GAIL:
             ################
             self.optim_actor.zero_grad()
 
-            #loss_actor = -self.discriminator(state, action)
             loss_actor = self.loss_fn(self.discriminator(states, actions), exp_label)
-            loss_actor.mean().backward()
+            entropy = -torch.sum(torch.mean(action) * torch.log(action))
+            new_loss = loss_actor + 0.01 * entropy
+            #loss_actor += 0.0000 * entropy
+            #loss_actor.mean().backward()
+            if entropy_penalty:
+                new_loss.mean().backward()
+            else:
+                loss_actor.mean().backward()
             self.optim_actor.step()
             gen_losses.append(loss_actor.mean())
             discrim_losses.append(loss)
