@@ -107,10 +107,13 @@ class GAIL:
             entropy = -torch.sum(torch.mean(action) * torch.log(action))
 
             #pg loss
-            reward = get_rewards(state)
+            reward = torch.Tensor(get_rewards(state)).to(device)
             correct_actions_onehot = self.expert_actions[actor_samples]
-            action_indices = np.where(action == 1)[0]
-            log_prob = torch.log(policy_dist.squeeze(0)[action_indices])
+            action_indices = torch.Tensor(np.where(correct_actions_onehot == 1)[0]).long().to(device)
+            action_indices = action_indices.unsqueeze(0).T
+            #log_prob = torch.log(action.squeeze(0)[action_indices])
+            #log_prob = torch.log(action[action_indices])
+            log_prob = action.gather(1, action_indices)
             pg_loss = -log_prob * reward
 
             #loss_actor += 0.0000 * entropy
