@@ -1,13 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, max_window_size):
         super(Actor, self).__init__()
 
+        self.max_window_size = max_window_size
         self.l1 = nn.Linear(state_dim, 400)
         self.l2 = nn.Linear(400, 200)
         self.l3 = nn.Linear(200, action_dim)
@@ -19,39 +21,46 @@ class Actor(nn.Module):
         return x
 
 class Discriminator(nn.Module):
-    def __init__(self, state_dim, action_dim):
+    def __init__(self, state_dim, action_dim, max_window_size):
         super(Discriminator, self).__init__()
 
-        self.l1 = nn.Linear(state_dim+action_dim, 500)
-        self.l2 = nn.Linear(500, 300)
-        self.l3 = nn.Linear(300, 300)
-        self.l4 = nn.Linear(300, 300)
-        self.l5 = nn.Linear(300, 300)
-        self.l6 = nn.Linear(300, 1)
+        self.max_window_size = max_window_size
+        self.hidden_dim = 128
+        self.n_layers = 1
+        self.lstm = nn.LSTM(state_dim+action_dim, self.hidden_dim, self.n_layers, batch_first=True)
+        self.flatten = nn.Flatten()
+        self.l1 = nn.Linear(self.hidden_dim * self.max_window_size, 1)
 
     def forward(self, state, action):
-        state_action = torch.cat([state, action], 1)
-        x = torch.tanh(self.l1(state_action))
-        x = torch.tanh(self.l2(x))
-        x = torch.tanh(self.l3(x))
-        x = torch.tanh(self.l4(x))
-        x = torch.tanh(self.l5(x))
-        x = torch.sigmoid(self.l6(x))
-        return x
+        state_action = torch.cat([state, action], 2)
+        batch_size = state_action.shape[0]
+
+        # Lstm
+        self.hidden = self.init_hidden(batch_size)
+        output, self.hidden = self.lstm(state_action, self.hidden)
+
+        output = self.flatten(output)
+        output = torch.sigmoid(self.l1(output))
+        return output
+
+    def init_hidden(self, batch_size):
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim), torch.zeros(self.n_layers, batch_size, self.hidden_dim))
+
 
 class GAIL:
     def __init__(self, expert_states, expert_actions, action_set, lr, betas):
         state_dim = expert_states.shape[1]
         action_dim = expert_actions.shape[1]
         self.action_set = action_set
+        self.max_window_size = 4
 
         self.expert_states = expert_states
         self.expert_actions = expert_actions
 
-        self.actor = Actor(state_dim, action_dim).to(device)
+        self.actor = Actor(state_dim, action_dim, self.max_window_size).to(device)
         self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr, betas=betas)
 
-        self.discriminator = Discriminator(state_dim, action_dim).to(device)
+        self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size).to(device)
         self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=betas)
 
         self.loss_fn = nn.BCELoss()
@@ -67,16 +76,32 @@ class GAIL:
     def update(self, n_iter, batch_size=100):
         gen_losses = list()
         discrim_losses = list()
-        for i in range(n_iter):
+        for ii in range(n_iter):
             # sample expert transitions
-            expert_samples = torch.randint(self.expert_states.shape[0], (batch_size,))
-            exp_state = torch.FloatTensor(self.expert_states[expert_samples]).to(device)
-            exp_action = torch.FloatTensor(self.expert_actions[expert_samples]).to(device)
+            indexes = list()
+            while len(indexes) < batch_size:
+                idx = np.random.randint(self.expert_states.shape[0])
+
+                # Check if states are inbetween games
+                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][4] >= self.expert_states[idx + self.max_window_size][4]:
+                    indexes.append(np.arange(idx, idx + self.max_window_size))
+            indexes = [indexes]
+
+            exp_states = torch.FloatTensor(self.expert_states[indexes]).to(device)
+            exp_actions = torch.FloatTensor(self.expert_actions[indexes]).to(device)
 
             # sample expert states for actor
-            actor_samples = torch.randint(self.expert_states.shape[0], (batch_size,))
-            state = torch.FloatTensor(self.expert_states[actor_samples]).to(device)
-            action = self.actor(state)
+            indexes = list()
+            while len(indexes) < batch_size:
+                idx = np.random.randint(self.expert_states.shape[0])
+
+                # Check if states are inbetween games
+                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][4] >= self.expert_states[idx + self.max_window_size][4]:
+                    indexes.append(np.arange(idx, idx + self.max_window_size))
+            indexes = [indexes]
+            states = torch.FloatTensor(self.expert_states[indexes]).to(device)
+            actions = torch.FloatTensor(self.expert_actions[indexes]).to(device)
+            action = self.actor(states[:, -1])
 
             #######################
             # update discriminator
@@ -88,11 +113,12 @@ class GAIL:
             policy_label = torch.full((batch_size,1), 0, device=device)
 
             # with expert transitions
-            prob_exp = self.discriminator(exp_state, exp_action)
+            prob_exp = self.discriminator(exp_states, exp_actions)
             loss = self.loss_fn(prob_exp, exp_label)
 
             # with policy transitions
-            prob_policy = self.discriminator(state, action.detach())
+            actions[:, -1, :] = action.detach()
+            prob_policy = self.discriminator(states, actions)
             loss += self.loss_fn(prob_policy, policy_label)
 
             # take gradient step
@@ -105,7 +131,7 @@ class GAIL:
             self.optim_actor.zero_grad()
 
             #loss_actor = -self.discriminator(state, action)
-            loss_actor = self.loss_fn(self.discriminator(state, action), exp_label)
+            loss_actor = self.loss_fn(self.discriminator(states, actions), exp_label)
             loss_actor.mean().backward()
             self.optim_actor.step()
             gen_losses.append(loss_actor.mean())
