@@ -146,3 +146,35 @@ def preprocess_actions(actions):
         idx = np.where(np.all(action_set == intermediary_actions[i], axis = 1))
         one_hot_actions[i, idx] = 1
     return action_set, one_hot_actions
+
+
+# Returns a list of rewards
+def get_rewards(states):
+    rewards = [-0.01]
+
+    for ii in range(1, states.shape[0]):
+        p1_stock = states[ii][5]
+        p1_percent = states[ii][4]
+        p2_stock = states[ii][252]
+        p2_percent = states[ii][251]
+        prev_p1_stock = states[ii - 1][5]
+        prev_p1_percent = states[ii - 1][4]
+        prev_p2_stock = states[ii - 1][252]
+        prev_p2_percent = states[ii - 1][251]
+
+        if prev_p1_stock >= p1_stock and prev_p2_stock >= p2_stock:
+            # Percent
+            reward = 1000 * (prev_p1_percent - p1_percent - prev_p2_percent + p2_percent)
+
+            # Stock
+            reward += -4000 * (prev_p1_stock - p1_stock - prev_p2_stock + p2_stock)
+
+        else:
+            reward = 0
+
+        if reward == 0:
+            reward = -0.01
+
+        rewards.append(reward)
+    
+    return rewards
