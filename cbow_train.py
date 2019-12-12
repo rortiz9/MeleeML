@@ -31,7 +31,7 @@ def main():
     test_states, test_actions = torch.Tensor(states[train_size:]), torch.Tensor(actions[train_size:])
 
     loss_fn = nn.MSELoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.02)
+    optimizer = optim.Adam(model.parameters(), lr=0.0005)
     losses = list()
     val_losses = list()
 
@@ -41,6 +41,7 @@ def main():
             print(i)
             state_action = model.forward(test_states, test_actions)
             loss = loss_fn(state_action, torch.cat([test_states,test_actions], 1))
+            print(loss.mean())
             val_losses.append(loss.mean())
             del state_action
         optimizer.zero_grad()
@@ -55,9 +56,13 @@ def main():
         del actions
         del state_action
         i += 1000
-
+    
+    plt.title("Reconstruction Loss (Validation)")
+    plt.xlabel("Epoch")
     plt.plot(val_losses)
     plt.show()
+
+    model.save()
 
 if __name__ == "__main__":
     main()
