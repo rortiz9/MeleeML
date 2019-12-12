@@ -65,16 +65,16 @@ def do_warm_start(model, optimizer, env, states, actions):
             val_loss = validate_on_cpu(model, env)
             mean_losses.append(val_loss)
         state = states[i]
-        if state[5] == 0 or state[20] == 0:
+        if state[5] == 0 or state[252] == 0:
                 continue
         action = actions[i]
         next_state = states[i + 1]
         done = False
         p1_score = (1000 * (next_state[5] - state[5]) -
                     (next_state[4] - state[4]))
-        p2_score = (1000 * (next_state[20] - state[20]) -
-                    (next_state[19] - state[19]))
-        if next_state[5] == 0 or next_state[20] == 0:
+        p2_score = (1000 * (next_state[252] - state[252]) -
+                    (next_state[251] - state[251]))
+        if next_state[5] == 0 or next_state[252] == 0:
             done = True
         reward = p1_score - p2_score
 
@@ -105,12 +105,12 @@ def validate_on_data(model, states, actions):
     '''next_states = np.roll(states, -1, axis = 0)
     p1_scores = (1000 * (next_states[:,5] - states[:, 5]) -
         next_states[:,4] - states[:, 4])
-    p2_scores = (1000 * (next_states[:,20] - states[:,20]) -
-        next_states[:,19] - states[:,19])
+    p2_scores = (1000 * (next_states[:,252] - states[:,252]) -
+        next_states[:,251] - states[:,251])
     rewards = p1_scores - p2_scores
     values, policy_dists = model.forward(states)
     next_values = model.forward(next_states)
-    dones = not (next_state[:,5] == 0 or next_states[:,20] == 0)
+    dones = not (next_state[:,5] == 0 or next_states[:,252] == 0)
     dones = dones.float()
     Q = reward + dones * next_values
     advantages = Q - values'''
@@ -118,16 +118,16 @@ def validate_on_data(model, states, actions):
     actor_losses, critic_losses = list(), list()
     for i in range(states.shape[0]):
         state = states[i]
-        if state[5] == 0 or state[20] == 0:
+        if state[5] == 0 or state[252] == 0:
                 continue
         action = actions[i]
         next_state = states[i + 1]
         done = False
         p1_score = (1000 * (next_state[5] - state[5]) -
                     (next_state[4] - state[4]))
-        p2_score = (1000 * (next_state[20] - state[20]) -
-                    (next_state[19] - state[19]))
-        if next_state[5] == 0 or next_state[20] == 0:
+        p2_score = (1000 * (next_state[252] - state[252]) -
+                    (next_state[251] - state[251]))
+        if next_state[5] == 0 or next_state[252] == 0:
             done = True
         reward = p1_score - p2_score
 
