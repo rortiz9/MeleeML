@@ -71,7 +71,8 @@ def do_warm_start(model, env, states, actions):
     discrim_losses = list()
     for i in range(400):
         print(i)
-        gen_loss, discrim_loss = model.update(100, batch_size = 100)
+        gen_loss, discrim_loss = model.update(100, batch_size = 100,
+                                              entropy_penalty = False, pg_penalty = True)
         gen_losses.append(gen_loss)
         discrim_losses.append(discrim_loss)
     #validate_on_cpu(model, env)

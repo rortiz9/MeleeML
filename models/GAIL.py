@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from envs.dataset import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -61,7 +62,7 @@ class GAIL:
         eval_action[action_idx] = 1
         return eval_action
 
-    def update(self, n_iter, batch_size=100, entropy_penalty = True):
+    def update(self, n_iter, batch_size=100, entropy_penalty = True, pg_penalty = True):
         gen_losses = list()
         discrim_losses = list()
         for i in range(n_iter):
@@ -104,10 +105,21 @@ class GAIL:
             #loss_actor = -self.discriminator(state, action)
             loss_actor = self.loss_fn(self.discriminator(state, action), exp_label)
             entropy = -torch.sum(torch.mean(action) * torch.log(action))
-            new_loss = loss_actor + 0.01 * entropy
+
+            #pg loss
+            reward = get_rewards(state)
+            correct_actions_onehot = self.expert_actions[actor_samples]
+            action_indices = np.where(action == 1)[0]
+            log_prob = torch.log(policy_dist.squeeze(0)[action_indices])
+            pg_loss = -log_prob * reward
+
             #loss_actor += 0.0000 * entropy
             #loss_actor.mean().backward()
             if entropy_penalty:
+                new_loss = loss_actor + 0.01 * entropy
+                new_loss.mean().backward()
+            elif pg_penalty:
+                new_loss = loss_actor + 0.01 * pg_loss
                 new_loss.mean().backward()
             else:
                 loss_actor.mean().backward()
