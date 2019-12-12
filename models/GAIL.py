@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import numpy as np
 from models.cbow import CBOW, CBOW_state
 from collections import deque
+from envs.dataset import *
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -135,7 +136,7 @@ class GAIL:
 
         return eval_action
 
-    def update(self, n_iter, batch_size=100, entropy_penalty = True, compress = True):
+    def update(self, n_iter, batch_size=100, entropy_penalty = True, pg_penalty = True):
         gen_losses = list()
         discrim_losses = list()
         for ii in range(n_iter):
@@ -195,14 +196,28 @@ class GAIL:
             self.optim_actor.zero_grad()
 
             loss_actor = self.loss_fn(self.discriminator(states, actions), exp_label)
-            entropy = -torch.sum(torch.mean(action) * torch.log(action))
-            new_loss = loss_actor + 0.01 * entropy
-            #loss_actor += 0.0000 * entropy
-            #loss_actor.mean().backward()
+
             if entropy_penalty:
+                entropy = -torch.sum(torch.mean(action) * torch.log(action))
+                new_loss = loss_actor + 0.01 * entropy
                 new_loss.mean().backward()
+
+            elif pg_penalty:
+                 #pg loss
+                reward = torch.Tensor(get_rewards(states[:, -2:, :])).to(device)
+                indexes = np.array(indexes)[:, :, -1]
+                correct_actions_onehot = self.expert_actions[indexes]
+                action_indices = torch.Tensor(np.where(correct_actions_onehot == 1)[0]).long().to(device)
+                action_indices = action_indices.unsqueeze(0).T
+                log_prob = action.gather(1, action_indices)
+                pg_loss = -log_prob * reward
+
+                new_loss = loss_actor + 0.01 * pg_loss
+                new_loss.mean().backward()
+
             else:
                 loss_actor.mean().backward()
+
             self.optim_actor.step()
             gen_losses.append(loss_actor.mean())
             discrim_losses.append(loss)
