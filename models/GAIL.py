@@ -10,8 +10,8 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
 
         self.max_window_size = max_window_size
-        self.hidden_dim = 128
-        self.n_layers = 1
+        self.hidden_dim = 50
+        self.n_layers = 3
         self.lstm = nn.LSTM(state_dim + action_dim, self.hidden_dim, self.n_layers, batch_first=True)
         self.flatten = nn.Flatten()
         self.l1 = nn.Linear(state_dim, 400)
@@ -35,7 +35,8 @@ class Actor(nn.Module):
         return nn.Softmax()(x)
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim), torch.zeros(self.n_layers, batch_size, self.hidden_dim))
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device), 
+                torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device))
 
 
 class Discriminator(nn.Module):
@@ -43,8 +44,8 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.max_window_size = max_window_size
-        self.hidden_dim = 128
-        self.n_layers = 1
+        self.hidden_dim = 50
+        self.n_layers = 3
         self.lstm = nn.LSTM(state_dim+action_dim, self.hidden_dim, self.n_layers, batch_first=True)
         self.flatten = nn.Flatten()
         self.l1 = nn.Linear(self.hidden_dim * self.max_window_size, 1)
@@ -62,7 +63,8 @@ class Discriminator(nn.Module):
         return output
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim), torch.zeros(self.n_layers, batch_size, self.hidden_dim))
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device), 
+                torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device))
 
 
 class GAIL:
