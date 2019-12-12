@@ -1,11 +1,9 @@
-import torch
+ torch
 import torch.nn as nn
 import torch.nn.functional as F
-<<<<<<< HEAD
 import numpy as np
-=======
 from models.cbow import CBOW, CBOW_state
->>>>>>> e87ed653978300d82db2ea891bf2dd2169cc92ec
+from collections import deque
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -104,12 +102,36 @@ class GAIL:
 
         self.loss_fn = nn.BCELoss()
 
+        self.state_quque = deque()
+        self.action_quque = deque()
+
     def select_action(self, state):
-        out = self.actor.forward(state)
-        action_dist = torch.distributions.Categorical(out.squeeze(0))
-        action_idx = action_dist.sample()
-        eval_action = torch.zeros((self.action_set.shape[0]))
-        eval_action[action_idx] = 1
+        if self.max_window_size == len(self.state_quque):
+            # Update Quque
+            self.state_quque.popleft()
+            self.action_quque.popleft()
+
+            # Get Previous States and Actions
+            prev_states = torch.cat(list(self.state_quque), 0)
+            prev_actions = torch.cat(list(self.action_quque), 0)
+
+            # Get Action
+            out = self.actor.forward(prev_states.view(1, self.max_window_size - 1, -1), prev_actions.view(1, self.max_window_size - 1, -1), state)
+            action_dist = torch.distributions.Categorical(out.squeeze(0))
+            action_idx = action_dist.sample()
+            eval_action = torch.zeros((self.action_set.shape[0]))
+            eval_action[action_idx] = 1
+
+        else:
+
+            # Return Nothing
+            eval_action = torch.zeros((self.action_set.shape[0]))
+            eval_action[0] = 1
+
+        # Add New Pair
+        self.state_quque.append(state)
+        self.action_quque.append(eval_action.view(1, -1))
+
         return eval_action
 
     def update(self, n_iter, batch_size=100, entropy_penalty = True, compress = True):
