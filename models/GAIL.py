@@ -1,4 +1,4 @@
- torch
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
@@ -19,7 +19,7 @@ class Actor(nn.Module):
         if self.encoder == None:
             self.l1 = nn.Linear(state_dim, 400)
         else:
-            self.l1 = nn.Linear(200, 400)
+            self.l1 = nn.Linear(150, 400)
         self.l2 = nn.Linear(400, 200)
         self.l3 = nn.Linear((self.hidden_dim * (self.max_window_size - 1)) + 200, action_dim)
 
@@ -48,7 +48,8 @@ class Actor(nn.Module):
 class Discriminator(nn.Module):
     def __init__(self, state_dim, action_dim, max_window_size, encoder = None):
         super(Discriminator, self).__init__()
-        self.encoder = encoder
+        self.encoder = None
+        #self.encoder = encoder
         self.max_window_size = max_window_size
         self.hidden_dim = 300
         self.n_layers = 1
@@ -94,10 +95,10 @@ class GAIL:
         self.state_enc = CBOW_state(state_dim)
         self.state_enc.load()
 
-        self.actor = Actor(state_dim, action_dim, self.max_window_size, encoder = state_enc).to(device)
+        self.actor = Actor(state_dim, action_dim, self.max_window_size, encoder = self.state_enc).to(device)
         self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr, betas=betas)
 
-        self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size, encoder = state_action_enc).to(device)
+        self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size, encoder = self.state_action_enc).to(device)
         self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=betas)
 
         self.loss_fn = nn.BCELoss()
