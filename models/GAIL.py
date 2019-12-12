@@ -18,7 +18,7 @@ class Actor(nn.Module):
         self.lstm = nn.LSTM(state_dim + action_dim, self.hidden_dim, self.n_layers, batch_first=True)
         self.flatten = nn.Flatten()
         if self.encoder == None:
-            self.l1 = nn.Linear(state_dim, 400)
+            self.l1 = nn.Linear(state_dim, 150)
         else:
             self.l1 = nn.Linear(150, 150)
         self.l2 = nn.Linear(150, 150)
@@ -92,9 +92,11 @@ class GAIL:
         self.expert_actions = expert_actions
         self.state_action_enc = CBOW(state_dim,  action_dim)
         self.state_action_enc.load()
+        self.state_action_enc = None
 
         self.state_enc = CBOW_state(state_dim)
         self.state_enc.load()
+        self.state_enc = None
 
         self.actor = Actor(state_dim, action_dim, self.max_window_size, encoder = self.state_enc).to(device)
         self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr*5, betas=betas)
