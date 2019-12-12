@@ -9,30 +9,30 @@ class Actor(nn.Module):
         super(Actor, self).__init__()
 
         self.l1 = nn.Linear(state_dim, 400)
-        self.l2 = nn.Linear(400, 300)
-        self.l3 = nn.Linear(300, 300)
-        self.l4 = nn.Linear(300, action_dim)
+        self.l2 = nn.Linear(400, 200)
+        self.l3 = nn.Linear(200, action_dim)
 
     def forward(self, x):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
-        x = F.relu(self.l3(x))
-        x = nn.Softmax()(self.l4(x))
+        x = nn.Softmax()(self.l3(x))
         return x
 
 class Discriminator(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Discriminator, self).__init__()
 
-        self.l1 = nn.Linear(state_dim+action_dim, 30)
-        self.l2 = nn.Linear(30, 30)
-        self.l3 = nn.Linear(30, 1)
+        self.l1 = nn.Linear(state_dim+action_dim, 500)
+        self.l2 = nn.Linear(500, 300)
+        self.l3 = nn.Linear(300, 300)
+        self.l4 = nn.Linear(300, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 1)
         x = torch.tanh(self.l1(state_action))
         x = torch.tanh(self.l2(x))
-        x = torch.sigmoid(self.l3(x))
+        x = torch.tanh(self.l3(x))
+        x = torch.sigmoid(self.l4(x))
         return x
 
 class GAIL:
