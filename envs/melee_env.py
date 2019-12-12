@@ -121,6 +121,9 @@ class MeleeEnv(gym.Env):
 
         reward = p1_score - p2_score
 
+        if reward == 0:
+            reward = -0.01
+
         if self.logger:
             self.logger.logframe(self.gamestate)
             self.logger.writeframe()
