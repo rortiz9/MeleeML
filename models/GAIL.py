@@ -1,20 +1,25 @@
-import torch
+ torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+from models.cbow import CBOW, CBOW_state
+from collections import deque
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 class Actor(nn.Module):
-    def __init__(self, state_dim, action_dim, max_window_size):
+    def __init__(self, state_dim, action_dim, max_window_size, encoder = None):
         super(Actor, self).__init__()
-
+        self.encoder = encoder
         self.max_window_size = max_window_size
         self.hidden_dim = 100
         self.n_layers = 3
         self.lstm = nn.LSTM(state_dim + action_dim, self.hidden_dim, self.n_layers, batch_first=True)
         self.flatten = nn.Flatten()
-        self.l1 = nn.Linear(state_dim, 400)
+        if self.encoder == None:
+            self.l1 = nn.Linear(state_dim, 400)
+        else:
+            self.l1 = nn.Linear(200, 400)
         self.l2 = nn.Linear(400, 200)
         self.l3 = nn.Linear((self.hidden_dim * (self.max_window_size - 1)) + 200, action_dim)
 
@@ -27,6 +32,8 @@ class Actor(nn.Module):
         prev_state_action, self.hidden = self.lstm(prev_state_action, self.hidden)
 
         # Embedding New State
+        if self.encoder is not None:
+            current_state = self.encoder.encode(current_state)
         current_state = F.relu(self.l1(current_state))
         current_state = F.relu(self.l2(current_state))
 
@@ -35,24 +42,28 @@ class Actor(nn.Module):
         return nn.Softmax()(x)
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device), 
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device),
                 torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device))
 
-
 class Discriminator(nn.Module):
-    def __init__(self, state_dim, action_dim, max_window_size):
+    def __init__(self, state_dim, action_dim, max_window_size, encoder = None):
         super(Discriminator, self).__init__()
-
+        self.encoder = encoder
         self.max_window_size = max_window_size
         self.hidden_dim = 300
         self.n_layers = 1
-        self.lstm = nn.LSTM(state_dim+action_dim, self.hidden_dim, self.n_layers, batch_first=True)
+        if self.encoder == None:
+            self.lstm = nn.LSTM(state_dim+action_dim, self.hidden_dim, self.n_layers, batch_first=True)
+        else:
+            self.lstm = nn.LSTM(200, self.hidden_dim, self.n_layers, batch_first=True)
         self.flatten = nn.Flatten()
         self.l1 = nn.Linear(self.hidden_dim * self.max_window_size, 300)
         self.l2 = nn.Linear(300, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 2)
+        if self.encoder is not None:
+            state_action = self.encoder.encode(state, action)
         batch_size = state_action.shape[0]
 
         # Lstm
@@ -65,9 +76,8 @@ class Discriminator(nn.Module):
         return output
 
     def init_hidden(self, batch_size):
-        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device), 
+        return (torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device),
                 torch.zeros(self.n_layers, batch_size, self.hidden_dim).to(device))
-
 
 class GAIL:
     def __init__(self, expert_states, expert_actions, action_set, lr, betas):
@@ -78,24 +88,53 @@ class GAIL:
 
         self.expert_states = expert_states
         self.expert_actions = expert_actions
+        self.state_action_enc = CBOW(state_dim,  action_dim)
+        self.state_action_enc.load()
 
-        self.actor = Actor(state_dim, action_dim, self.max_window_size).to(device)
+        self.state_enc = CBOW_state(state_dim)
+        self.state_enc.load()
+
+        self.actor = Actor(state_dim, action_dim, self.max_window_size, encoder = state_enc).to(device)
         self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr, betas=betas)
 
-        self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size).to(device)
+        self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size, encoder = state_action_enc).to(device)
         self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=betas)
 
         self.loss_fn = nn.BCELoss()
 
+        self.state_quque = deque()
+        self.action_quque = deque()
+
     def select_action(self, state):
-        out = self.actor.forward(state)
-        action_dist = torch.distributions.Categorical(out.squeeze(0))
-        action_idx = action_dist.sample()
-        eval_action = torch.zeros((self.action_set.shape[0]))
-        eval_action[action_idx] = 1
+        if self.max_window_size == len(self.state_quque):
+            # Update Quque
+            self.state_quque.popleft()
+            self.action_quque.popleft()
+
+            # Get Previous States and Actions
+            prev_states = torch.cat(list(self.state_quque), 0)
+            prev_actions = torch.cat(list(self.action_quque), 0)
+
+            # Get Action
+            out = self.actor.forward(prev_states.view(1, self.max_window_size - 1, -1), prev_actions.view(1, self.max_window_size - 1, -1), state)
+            action_dist = torch.distributions.Categorical(out.squeeze(0))
+            action_idx = action_dist.sample()
+            eval_action = torch.zeros((self.action_set.shape[0]))
+            eval_action[action_idx] = 1
+
+        else:
+
+            # Return Nothing
+            eval_action = torch.zeros((self.action_set.shape[0]))
+            eval_action[0] = 1
+
+        # Add New Pair
+        self.state_quque.append(state)
+        self.action_quque.append(eval_action.view(1, -1))
+
         return eval_action
 
-    def update(self, n_iter, batch_size=100, entropy_penalty = True):
+    def update(self, n_iter, batch_size=100, entropy_penalty = True, compress = True):
         gen_losses = list()
         discrim_losses = list()
         for ii in range(n_iter):
