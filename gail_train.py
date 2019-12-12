@@ -47,23 +47,27 @@ def main():
     lr = 0.0002                 # learing rate
     betas = (0.5, 0.999)        # betas for adam optimizer
     states, actions, action_set = get_data_from_logs(args.data, one_hot_actions = True)
+    print("samples: ", states.shape[0])
     model = GAIL(states, actions, action_set, lr, betas)
     env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,
                    iso_path=args.iso_path)
     gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
+    env.close()
     fig, ax = plt.subplots(2)
+    ax[0].set_title("generator losses")
     ax[0].plot(gen_losses)
+    ax[1].set_title("discriminator losses")
     ax[1].plot(discrim_losses)
     plt.show()
 
 def do_warm_start(model, env, states, actions):
     gen_losses = list()
     discrim_losses = list()
-    for i in range(10):
+    for i in range(300):
         print(i)
-        gen_loss, discrim_loss = model.update(1000)
+        gen_loss, discrim_loss = model.update(100, batch_size = 10)
         gen_losses.append(gen_loss)
         discrim_losses.append(discrim_loss)
     validate_on_cpu(model, env)
