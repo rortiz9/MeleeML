@@ -16,6 +16,7 @@ class Actor(nn.Module):
         x = F.relu(self.l1(x))
         x = F.relu(self.l2(x))
         x = nn.Softmax()(self.l3(x))
+        #x = torch.sigmoid(self.l3(x))
         return x
 
 class Discriminator(nn.Module):
@@ -25,18 +26,14 @@ class Discriminator(nn.Module):
         self.l1 = nn.Linear(state_dim+action_dim, 500)
         self.l2 = nn.Linear(500, 300)
         self.l3 = nn.Linear(300, 300)
-        self.l4 = nn.Linear(300, 300)
-        self.l5 = nn.Linear(300, 300)
-        self.l6 = nn.Linear(300, 1)
+        self.l4 = nn.Linear(300, 1)
 
     def forward(self, state, action):
         state_action = torch.cat([state, action], 1)
         x = torch.tanh(self.l1(state_action))
         x = torch.tanh(self.l2(x))
         x = torch.tanh(self.l3(x))
-        x = torch.tanh(self.l4(x))
-        x = torch.tanh(self.l5(x))
-        x = torch.sigmoid(self.l6(x))
+        x = torch.sigmoid(self.l4(x))
         return x
 
 class GAIL:
@@ -106,7 +103,11 @@ class GAIL:
 
             #loss_actor = -self.discriminator(state, action)
             loss_actor = self.loss_fn(self.discriminator(state, action), exp_label)
-            loss_actor.mean().backward()
+            entropy = -torch.sum(torch.mean(action) * torch.log(action))
+            new_loss = loss_actor + 0.01 * entropy
+            #loss_actor += 0.0000 * entropy
+            #loss_actor.mean().backward()
+            new_loss.mean().backward()
             self.optim_actor.step()
             gen_losses.append(loss_actor.mean())
             discrim_losses.append(loss)
