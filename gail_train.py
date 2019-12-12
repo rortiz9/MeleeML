@@ -72,7 +72,7 @@ def do_warm_start(model, env, states, actions):
     for i in range(250):
         print(i)
         gen_loss, discrim_loss = model.update(100, batch_size = 100, 
-                                              entropy_penalty = False, pg_penalty= False)
+                                              entropy_penalty = True, pg_penalty= False)
         gen_losses.append(gen_loss)
         discrim_losses.append(discrim_loss)
     #validate_on_cpu(model, env)
