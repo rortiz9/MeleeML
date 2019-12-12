@@ -102,8 +102,8 @@ class GAIL:
             while len(indexes) < batch_size:
                 idx = np.random.randint(self.expert_states.shape[0])
 
-                # Check if states are inbetween games
-                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][4] >= self.expert_states[idx + self.max_window_size][4]:
+                # Check if states are inbetween games: 5 and 252 is the feature for stock hopefully
+                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][5] >= self.expert_states[idx + self.max_window_size][5] and self.expert_states[idx][252] >= self.expert_states[idx + self.max_window_size][252]:
                     indexes.append(np.arange(idx, idx + self.max_window_size))
             indexes = [indexes]
 
@@ -116,7 +116,7 @@ class GAIL:
                 idx = np.random.randint(self.expert_states.shape[0])
 
                 # Check if states are inbetween games
-                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][4] >= self.expert_states[idx + self.max_window_size][4]:
+                if idx + self.max_window_size < self.expert_states.shape[0] and self.expert_states[idx][5] >= self.expert_states[idx + self.max_window_size][5] and self.expert_states[idx][252] >= self.expert_states[idx + self.max_window_size][252]:
                     indexes.append(np.arange(idx, idx + self.max_window_size))
             indexes = [indexes]
             states = torch.FloatTensor(self.expert_states[indexes]).to(device)
