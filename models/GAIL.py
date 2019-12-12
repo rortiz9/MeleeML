@@ -19,9 +19,9 @@ class Actor(nn.Module):
         if self.encoder == None:
             self.l1 = nn.Linear(state_dim, 400)
         else:
-            self.l1 = nn.Linear(150, 400)
-        self.l2 = nn.Linear(400, 200)
-        self.l3 = nn.Linear((self.hidden_dim * (self.max_window_size - 1)) + 200, action_dim)
+            self.l1 = nn.Linear(150, 150)
+        self.l2 = nn.Linear(150, 150)
+        self.l3 = nn.Linear((self.hidden_dim * (self.max_window_size - 1)) + 150, action_dim)
 
     def forward(self, prev_state, prev_action, current_state):
         prev_state_action = torch.cat([prev_state, prev_action], 2)
@@ -96,10 +96,10 @@ class GAIL:
         self.state_enc.load()
 
         self.actor = Actor(state_dim, action_dim, self.max_window_size, encoder = self.state_enc).to(device)
-        self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr, betas=betas)
+        self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=lr*5, betas=betas)
 
         self.discriminator = Discriminator(state_dim, action_dim, self.max_window_size, encoder = self.state_action_enc).to(device)
-        self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr, betas=betas)
+        self.optim_discriminator = torch.optim.Adam(self.discriminator.parameters(), lr=lr/200., betas=betas)
 
         self.loss_fn = nn.BCELoss()
 
@@ -135,7 +135,7 @@ class GAIL:
 
         return eval_action
 
-    def update(self, n_iter, batch_size=100, entropy_penalty = True, compress = True):
+    def update(self, n_iter, batch_size=100, entropy_penalty = True):
         gen_losses = list()
         discrim_losses = list()
         for ii in range(n_iter):
