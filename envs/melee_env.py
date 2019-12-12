@@ -1,7 +1,7 @@
 import gym
 import melee
 import numpy as np
-from dataset import preprocess_states
+from envs.dataset import preprocess_states
 
 class MeleeEnv(gym.Env):
     def __init__(self,
