@@ -46,16 +46,17 @@ def main():
     model = GAIL(states, actions, action_set, lr, betas)
     model.load()
     env = None
+    '''
     env = MeleeEnv(action_set,
                    log=args.log,
                    render=args.render,
                    iso_path=args.iso_path)
-    #gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
-    validate_on_cpu(model, env)
-    env.close()
+    '''
+    gen_losses, discrim_losses = do_warm_start(model, env, states, actions)
+    #validate_on_cpu(model, env)
+    #env.close()
 
     # Graph
-    '''
     fig, ax = plt.subplots(2)
     ax[0].set_title("generator losses")
     ax[0].plot(gen_losses)
@@ -65,14 +66,13 @@ def main():
 
     # Save Model
     model.save()
-    '''
 
 def do_warm_start(model, env, states, actions):
     gen_losses = list()
     discrim_losses = list()
-    for i in range(300):
+    for i in range(400):
         print(i)
-        gen_loss, discrim_loss = model.update(100, batch_size = 10)
+        gen_loss, discrim_loss = model.update(100, batch_size = 100)
         gen_losses.append(gen_loss)
         discrim_losses.append(discrim_loss)
     #validate_on_cpu(model, env)
